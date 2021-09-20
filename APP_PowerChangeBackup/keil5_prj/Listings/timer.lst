@@ -1,0 +1,64 @@
+C51 COMPILER V9.54   TIMER                                                                 05/07/2021 22:22:45 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE TIMER
+OBJECT MODULE PLACED IN .\outHex\timer.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\TIMER\timer.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\..\74HC573;..\..\
+                    -BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\..\pcf8591;..\..\
+                    -PWM;..\..\software_timer;..\..\TIMER;..\..\UART) DEBUG OBJECTEXTEND PRINT(.\Listings\timer.lst) TABS(2) OBJECT(.\outHex\
+                    -timer.obj)
+
+line level    source
+
+   1          
+   2          #include "timer.h"
+   3          
+   4          
+   5          typedef void (*timer0_callback)(void);
+   6          
+   7          timer0_callback p_timer0_callback = 0;
+   8          
+   9          void Timer0_Init()
+  10          {
+  11   1        TL0 = (65536 - TIMER_RELOAD )%256;   
+  12   1        TH0 = (65536 - TIMER_RELOAD )/256;
+  13   1        TMOD |=0x01;
+  14   1        ET0 = 1;
+  15   1        EA=1;
+  16   1        TR0 = 0;
+  17   1        TR0 = 1;
+  18   1      }
+  19          
+  20          void Timer0_set_callback(void* pfun)
+  21          {
+  22   1          p_timer0_callback = (timer0_callback)pfun;
+  23   1      }
+  24          
+  25          void Timer0_IRQ(void) interrupt 1
+  26          {
+  27   1          EA = 0;
+  28   1        
+  29   1          TL0 = (65536 - TIMER_RELOAD )%256; 
+  30   1          TH0 = (65536 - TIMER_RELOAD )/256;
+  31   1      
+  32   1          if(p_timer0_callback != 0)
+  33   1          {
+  34   2              p_timer0_callback();
+  35   2          }
+  36   1          EA = 1;
+  37   1      
+  38   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    106    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      3    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

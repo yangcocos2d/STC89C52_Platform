@@ -1,0 +1,32 @@
+A51 MACRO ASSEMBLER  ASM_FUNCTION                                                         05/16/2021 11:02:59 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.02c
+OBJECT MODULE PLACED IN .\outHex\asm_function.obj
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE asm_function.a51 SET(SMALL) DEBUG PRINT(.\Listings\asm_function.lst) OB
+                      JECT(.\outHex\asm_function.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     
+                       2     
+0000                   3     _get_sp:
+0000 A881              4                     mov r0,sp
+0002 22                5                     ret
+*** WARNING #A41 IN 5 (asm_function.a51, LINE 5): MISSING 'END' STATEMENT
+A51 MACRO ASSEMBLER  ASM_FUNCTION                                                         05/16/2021 11:02:59 PAGE     2
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+SP . . . . . . . .  D ADDR   0081H   A   
+_GET_SP. . . . . .  C ADDR   0000H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  1 WARNING(S), 0 ERROR(S)

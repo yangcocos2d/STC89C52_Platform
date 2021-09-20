@@ -1,0 +1,47 @@
+C51 COMPILER V9.54   AT24CXX                                                               05/10/2021 21:02:23 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE AT24CXX
+OBJECT MODULE PLACED IN .\outHex\AT24CXX.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\AT24CXX\AT24CXX.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\..\74HC573;..
+                    -\..\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\..\pcf8591;..
+                    -\..\PWM;..\..\software_timer;..\..\TIMER;..\..\UART;..\..\BUTTON_Matrix;..\..\AT24CXX) DEBUG OBJECTEXTEND PRINT(.\Listin
+                    -gs\AT24CXX.lst) TABS(2) OBJECT(.\outHex\AT24CXX.obj)
+
+line level    source
+
+   1          #include "AT24CXX.h"
+   2          #include "iic.h"
+   3          
+   4          #define AT24CXX_IIC_SLAVE   0x50
+   5          
+   6          void AT24CXX_write(char address,char *buffer,int length)
+   7          {
+   8   1        int i=0;
+   9   1        for(i=length;i>=0;i--)
+  10   1        {
+  11   2          buffer[i+1] = buffer[i];
+  12   2        }
+  13   1        buffer[0] =   address;
+  14   1        iic_write_data(AT24CXX_IIC_SLAVE, buffer, length+1);
+  15   1      }
+  16          
+  17          void AT24CXX_read(char address,char *buffer,int length)
+  18          {
+  19   1        int i=0;
+  20   1        iic_random_read_data(AT24CXX_IIC_SLAVE,address, buffer, length);
+  21   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    121    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      16
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

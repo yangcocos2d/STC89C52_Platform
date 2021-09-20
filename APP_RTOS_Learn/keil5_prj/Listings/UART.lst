@@ -1,0 +1,95 @@
+C51 COMPILER V9.54   UART                                                                  07/23/2021 08:17:49 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE UART
+OBJECT MODULE PLACED IN .\outHex\UART.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\UART\UART.c ROM(COMPACT) OPTIMIZE(8,SPEED) BROWSE NOAREGS INCDIR(.
+                    -.\..\74HC573;..\..\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;.
+                    -.\..\pcf8591;..\..\PWM;..\..\software_timer;..\..\TIMER;..\..\UART;..\..\BUTTON_Matrix;..\..\AT24CXX;..\..\Thread) DEBUG
+                    - OBJECTEXTEND PRINT(.\Listings\UART.lst) TABS(2) OBJECT(.\outHex\UART.obj)
+
+line level    source
+
+   1          #include "UART.h"
+   2          
+   3          //-----------------UART---------------
+   4          void Uart_init()
+   5          {
+   6   1          TMOD |= 0x20; 
+   7   1          TH1 = 0xfd; 
+   8   1          TL1 = 0xfd;
+   9   1          SM0 = 0;
+  10   1          SM1 = 1;
+  11   1          REN = 1;
+  12   1          PCON = 0x00; 
+  13   1         
+  14   1          ES = 1; 
+  15   1          EA = 1; 
+  16   1          TR1 = 1;  
+  17   1      
+  18   1      }
+  19          
+  20          void Uart_Send( char Data)
+  21          {
+  22   1        SBUF=Data; 
+  23   1        while(TI==0);      
+  24   1        TI=0;
+  25   1       
+  26   1      }
+  27          
+  28          char putchar(char c)
+  29          {
+  30   1        
+  31   1        EA = 0;
+  32   1        Uart_Send(c);
+  33   1        EA = 1;
+  34   1        return c;
+  35   1        
+  36   1      }
+  37          
+  38          void Uart_puts(const char* str)
+  39          {
+  40   1        int i = 0;
+  41   1       
+  42   1        
+  43   1        while(str[i]!='\0')
+  44   1        {
+  45   2          putchar(str[i]);
+  46   2          i++;
+  47   2        }
+  48   1       
+  49   1      }
+  50          
+  51          void Uart_IRQ() interrupt 4
+  52          {
+C51 COMPILER V9.54   UART                                                                  07/23/2021 08:17:49 PAGE 2   
+
+  53   1        //串口数据接收标志位
+  54   1        if(RI == 1)
+  55   1        {
+  56   2          RI = 0;
+  57   2          //data = SBUF
+  58   2        
+  59   2        }   
+  60   1        //串口数据发送完成标志位
+  61   1        if(TI == 0)
+  62   1        {
+  63   2          TI = 0;
+  64   2          
+  65   2        }
+  66   1        
+  67   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     95    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       3
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

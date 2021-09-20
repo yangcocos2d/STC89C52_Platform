@@ -1,0 +1,153 @@
+C51 COMPILER V9.54   LCD1602                                                               05/10/2021 21:02:23 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE LCD1602
+OBJECT MODULE PLACED IN .\outHex\LCD1602.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\LCD1602\LCD1602.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\..\74HC573;..
+                    -\..\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\..\pcf8591;..
+                    -\..\PWM;..\..\software_timer;..\..\TIMER;..\..\UART;..\..\BUTTON_Matrix;..\..\AT24CXX) DEBUG OBJECTEXTEND PRINT(.\Listin
+                    -gs\LCD1602.lst) TABS(2) OBJECT(.\outHex\LCD1602.obj)
+
+line level    source
+
+   1          
+   2          #include "LCD1602.h"
+   3          #include <intrins.h>
+   4          
+   5          void LCD_delayus(unsigned int us)
+   6          {
+   7   1         unsigned int i = us /13;
+   8   1         while(i--);
+   9   1      }
+  10           
+  11          int idata lcd_delay_us_set = 1000;
+  12          void LCD_delay_10us()   
+  13          {
+  14   1        if(lcd_delay_us_set <= 10)
+  15   1        {
+  16   2        
+  17   2        }
+  18   1        else
+  19   1        {
+  20   2          LCD_delayus(lcd_delay_us_set);
+  21   2        }
+  22   1      }
+  23          
+  24          unsigned char LCD_ReadStatus()
+  25          {
+  26   1        unsigned char Data = 0;
+  27   1        LCD_RS = 0;
+  28   1        LCD_RW = 1;
+  29   1        LCD_DATA = 0xFF;
+  30   1        LCD_E = 1;
+  31   1        LCD_delay_10us();
+  32   1        Data = LCD_DATA;
+  33   1        LCD_E = 0;
+  34   1        LCD_delay_10us(); 
+  35   1        return Data;
+  36   1      }
+  37          
+  38          unsigned char LCD_ReadData()
+  39          {
+  40   1        unsigned char Data = 0;
+  41   1      
+  42   1        LCD_RS = 1;
+  43   1        LCD_RW = 1;
+  44   1        LCD_DATA = 0xFF;
+  45   1        LCD_E = 1;
+  46   1        LCD_delay_10us();
+  47   1        Data = LCD_DATA;
+  48   1        LCD_E = 0;
+  49   1        LCD_delay_10us();
+  50   1        return Data;
+  51   1      }
+  52          
+C51 COMPILER V9.54   LCD1602                                                               05/10/2021 21:02:23 PAGE 2   
+
+  53          void LCD_WriteCmd(unsigned char Cmd)
+  54          {
+  55   1        LCD_RS = 0;
+  56   1        LCD_RW = 0;
+  57   1        LCD_DATA = Cmd;
+  58   1        LCD_E = 1;
+  59   1        LCD_delay_10us();
+  60   1        LCD_E = 0;
+  61   1        LCD_delay_10us();
+  62   1      }
+  63          
+  64          void LCD_WriteData(unsigned char Data)
+  65          { 
+  66   1        LCD_RS = 1;
+  67   1        LCD_RW = 0;
+  68   1        LCD_DATA = Data;
+  69   1        LCD_E = 1;  
+  70   1        LCD_delay_10us();
+  71   1        LCD_E = 0;
+  72   1        LCD_delay_10us();
+  73   1      }
+  74          
+  75          #define LCD_CMD_CLEAR     0x01
+  76          #define LCD_CMD_OFF       0x08
+  77          #define LCD_CMD_ON        0x0C
+  78          #define LCD_CMD_SET       0x38  
+  79          
+  80          void LCD_Init()
+  81          {
+  82   1        lcd_delay_us_set = 1000;
+  83   1        LCD_WriteCmd(LCD_CMD_OFF);
+  84   1        LCD_WriteCmd(LCD_CMD_ON);
+  85   1        LCD_WriteCmd(LCD_CMD_CLEAR);
+  86   1        LCD_WriteCmd(LCD_CMD_SET); 
+  87   1        lcd_delay_us_set = 0;
+  88   1      }
+  89          
+  90          /*
+  91          屏幕打印的坐标系规定如下:
+  92          o-------------------->x  
+  93          |
+  94          |
+  95          |
+  96          v
+  97          y
+  98           
+  99          */
+ 100          void LCD_PutcOnxy(char x,char y,char Data)
+ 101          {
+ 102   1      
+ 103   1        LCD_WriteCmd( x   +0x80 + y*0x40 );
+ 104   1        LCD_WriteData(Data);
+ 105   1      }
+ 106          
+ 107          void LCD_Puts(char x,char y,char *str)
+ 108          {
+ 109   1        int i = 0;
+ 110   1        LCD_WriteCmd(x + 0x80 + y*0x40);
+ 111   1        while(str[i]!='\0')
+ 112   1        {  
+ 113   2          LCD_WriteData(str[i]);
+ 114   2          i++;
+C51 COMPILER V9.54   LCD1602                                                               05/10/2021 21:02:23 PAGE 3   
+
+ 115   2        }
+ 116   1        
+ 117   1      }
+ 118          
+ 119          void LCD_Clear()
+ 120          {
+ 121   1        LCD_Puts(0,0,"                ");
+ 122   1        LCD_Puts(0,1,"                ");
+ 123   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    229    ----
+   CONSTANT SIZE    =     17    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       5
+   IDATA SIZE       =      2    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

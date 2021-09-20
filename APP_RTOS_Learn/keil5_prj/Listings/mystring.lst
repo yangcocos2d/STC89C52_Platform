@@ -1,0 +1,78 @@
+C51 COMPILER V9.54   MYSTRING                                                              05/16/2021 19:57:50 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MYSTRING
+OBJECT MODULE PLACED IN .\outHex\mystring.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\mystring\mystring.c ROM(SMALL) OPTIMIZE(8,SPEED) BROWSE INCDIR(..\
+                    -..\74HC573;..\..\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\
+                    -..\pcf8591;..\..\PWM;..\..\software_timer;..\..\TIMER;..\..\UART;..\..\BUTTON_Matrix;..\..\AT24CXX) DEBUG OBJECTEXTEND P
+                    -RINT(.\Listings\mystring.lst) TABS(2) OBJECT(.\outHex\mystring.obj)
+
+line level    source
+
+   1          #include "mystring.h"
+   2          
+   3          void str_itoa(char *buffer,int int_data)
+   4          {   
+   5   1        int i=0;
+   6   1        int temp = 0;
+   7   1        int buffer_index = 0;
+   8   1        int div =10000;
+   9   1      
+  10   1        if(int_data < 0)
+  11   1        {
+  12   2          buffer[0] = '-';
+  13   2          int_data = -int_data;
+  14   2        }
+  15   1        
+  16   1        
+  17   1        for(i=0;i<5;i++)
+  18   1        {
+  19   2          if(i != 0)
+  20   2          {
+  21   3            temp = int_data%(div*10);
+  22   3          }
+  23   2          temp = temp/div;
+  24   2          if(int_data>=div)
+  25   2          {
+  26   3            buffer[buffer_index] = temp + '0';
+  27   3            buffer_index++;
+  28   3          } 
+  29   2          div = div/10;
+  30   2      
+  31   2        }
+  32   1        
+  33   1        if(int_data == 0)
+  34   1        {
+  35   2          buffer[0] = '0';
+  36   2        }
+  37   1          
+  38   1      
+  39   1      }
+  40          
+  41          void str_copy(char* des,char *src)
+  42          { 
+  43   1        int i = 0; 
+  44   1        while(src[i]!='\0')
+  45   1        {
+  46   2          des[i] = src[i];
+  47   2          i++;
+  48   2        }
+  49   1      
+  50   1      }
+
+
+C51 COMPILER V9.54   MYSTRING                                                              05/16/2021 19:57:50 PAGE 2   
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    234    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      19
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

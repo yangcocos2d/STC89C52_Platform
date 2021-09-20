@@ -1,0 +1,211 @@
+C51 COMPILER V9.54   MAIN_002                                                              05/12/2021 22:34:26 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MAIN_002
+OBJECT MODULE PLACED IN .\outHex\main_002.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\main_002.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\..\74HC573;..\..\BUTTON
+                    -;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\..\pcf8591;..\..\PWM;..
+                    -\..\software_timer;..\..\TIMER;..\..\UART;..\..\motor_stepper) DEBUG OBJECTEXTEND PRINT(.\Listings\main_002.lst) TABS(2)
+                    - OBJECT(.\outHex\main_002.obj)
+
+line level    source
+
+   1          
+   2          #include <stdio.h>
+   3          #include <reg52.h>
+   4          #include "timer.h"
+   5          #include "software_timer.h"
+   6          #include "lcd1602.h"
+   7          #include "mystring.h"
+   8          #include "UART.h"
+   9          #include "exti_interrupt.h"
+  10          #include "motor_stepper.h"
+  11          #include <intrins.h>
+  12           
+  13          sbit test = P1^7;
+  14          sbit sonic_echo = P3^3;
+  15          sbit sonic_1 = P2^4;
+  16          sbit alarm = P1^5;
+  17          #define ALALM_DISTANCE  100
+  18          #define STOP_DISTANCE   30
+  19          
+  20          
+  21          typedef struct sonic_time_record
+  22          {
+  23            unsigned int timer0_res_load_start;
+  24            unsigned int timer0_res_load_end;
+  25            unsigned int timer0_res_load_diff;
+  26            int distance;
+  27          }sonic_time_record;
+  28          
+  29          sonic_time_record sonic_time_record_data = {0,0,0,ALALM_DISTANCE*2};
+  30           
+  31          void startup_delay10us( )
+  32          {
+  33   1         _nop_();
+  34   1         _nop_();
+  35   1         _nop_();
+  36   1         _nop_();
+  37   1         _nop_();
+  38   1         _nop_();
+  39   1         _nop_();
+  40   1         _nop_();
+  41   1         _nop_();
+  42   1         _nop_();
+  43   1      }
+  44          
+  45           
+  46          enum lcd_pages{lcd_page_start,lcd_page_sonic,lcd_page_alarm,lcd_page_end};
+  47          enum lcd_pages lcd_page = lcd_page_sonic;
+  48          char idata lcd_buffer[2][20];
+  49          void lcd_update()
+  50          {
+  51   1        
+  52   1        float f_distance = sonic_time_record_data.timer0_res_load_diff*0.037425/2;
+C51 COMPILER V9.54   MAIN_002                                                              05/12/2021 22:34:26 PAGE 2   
+
+  53   1        sonic_time_record_data.distance = f_distance + 0.5;
+  54   1        
+  55   1        str_copy(lcd_buffer[0],"                ");
+  56   1        str_copy(lcd_buffer[1],"                ");
+  57   1      
+  58   1        if(lcd_page == lcd_page_sonic)
+  59   1        {
+  60   2          str_copy(lcd_buffer[0],"sonic (cm):");
+  61   2          str_itoa(lcd_buffer[1], sonic_time_record_data.distance);
+  62   2        }
+  63   1        else if(lcd_page == lcd_page_alarm)
+  64   1        {
+  65   2          str_copy(lcd_buffer[0],"alarm!");
+  66   2          str_itoa(lcd_buffer[1], sonic_time_record_data.distance);
+  67   2        }
+  68   1        LCD_Puts(0,0,lcd_buffer[0]);
+  69   1        LCD_Puts(0,1,lcd_buffer[1]);
+  70   1         
+  71   1      
+  72   1      }
+  73          soft_timer idata timer_lcd_update = {0,20,lcd_update};
+  74          
+  75          void sonic_measure()
+  76          {
+  77   1        if(sonic_echo == 0)
+  78   1        {
+  79   2          sonic_1 = 1;
+  80   2          startup_delay10us( );
+  81   2          sonic_1 = 0;
+  82   2        }
+  83   1        
+  84   1      }
+  85          soft_timer idata timer_sonic_measure = {0,10,sonic_measure};
+  86          
+  87          
+  88          void alarm_manage()
+  89          {
+  90   1        if(sonic_time_record_data.distance <= ALALM_DISTANCE)
+  91   1        {
+  92   2          lcd_page = lcd_page_alarm;
+  93   2          alarm = ~alarm;
+  94   2         
+  95   2        }
+  96   1        else
+  97   1        {
+  98   2          lcd_page = lcd_page_sonic;
+  99   2          alarm = 1;
+ 100   2        }
+ 101   1       
+ 102   1      }
+ 103          soft_timer idata timer_alarm_manage = {0,2,alarm_manage};
+ 104          
+ 105          void motor_stepper()
+ 106          {
+ 107   1      
+ 108   1        if(sonic_time_record_data.distance <= STOP_DISTANCE)
+ 109   1        {
+ 110   2          
+ 111   2          motor_stepper_fast_stop();
+ 112   2        }
+ 113   1        else
+ 114   1        {
+C51 COMPILER V9.54   MAIN_002                                                              05/12/2021 22:34:26 PAGE 3   
+
+ 115   2          
+ 116   2          motor_stepper_clockwise_once();
+ 117   2        }
+ 118   1        
+ 119   1       
+ 120   1        
+ 121   1      }
+ 122          soft_timer idata timer_motor_stepper = {0,10,motor_stepper};
+ 123          
+ 124          void Timer0_Handle()
+ 125          {
+ 126   1      
+ 127   1        soft_timer_stepper(&timer_lcd_update);
+ 128   1        soft_timer_stepper(&timer_sonic_measure);
+ 129   1        soft_timer_check(&timer_sonic_measure,0);
+ 130   1        
+ 131   1        soft_timer_stepper(&timer_motor_stepper);
+ 132   1        soft_timer_stepper(&timer_alarm_manage);
+ 133   1        
+ 134   1      }
+ 135          
+ 136          void exti0_Handle()
+ 137          {
+ 138   1        //Timer0_interupt_disable();
+ 139   1        sonic_time_record_data.timer0_res_load_start = TH0*256 + TL0;
+ 140   1      }
+ 141          void exti1_Handle()
+ 142          {
+ 143   1        sonic_time_record_data.timer0_res_load_end = TH0*256 + TL0;
+ 144   1        //Timer0_interupt_enable();
+ 145   1        if(sonic_time_record_data.timer0_res_load_end >= sonic_time_record_data.timer0_res_load_start)
+ 146   1        {
+ 147   2            sonic_time_record_data.timer0_res_load_diff = sonic_time_record_data.timer0_res_load_end - sonic_time_r
+             -ecord_data.timer0_res_load_start;
+ 148   2        }
+ 149   1        else
+ 150   1        { 
+ 151   2            sonic_time_record_data.timer0_res_load_diff = sonic_time_record_data.timer0_res_load_end + 63336 - soni
+             -c_time_record_data.timer0_res_load_start;
+ 152   2        }
+ 153   1         
+ 154   1      }
+ 155          void main()
+ 156          {
+ 157   1       
+ 158   1        LCD_Init();
+ 159   1        Uart_init();
+ 160   1        Timer0_set_callback(Timer0_Handle);
+ 161   1        Timer0_Init();
+ 162   1        exti0_interrupt_set_callback(exti0_Handle);
+ 163   1        exti1_interrupt_set_callback(exti1_Handle);
+ 164   1        exti_interrupt_init();
+ 165   1        
+ 166   1        while(1)
+ 167   1        {
+ 168   2          soft_timer_check(&timer_lcd_update,0);
+ 169   2          
+ 170   2          soft_timer_check(&timer_motor_stepper,0);
+ 171   2          soft_timer_check(&timer_alarm_manage,0);
+ 172   2        }
+ 173   1      
+ 174   1         
+C51 COMPILER V9.54   MAIN_002                                                              05/12/2021 22:34:26 PAGE 4   
+
+ 175   1         
+ 176   1      }
+ 177          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    463    ----
+   CONSTANT SIZE    =     36    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      9       4
+   IDATA SIZE       =     68    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

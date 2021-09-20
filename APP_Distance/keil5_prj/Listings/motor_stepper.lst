@@ -1,0 +1,70 @@
+C51 COMPILER V9.54   MOTOR_STEPPER                                                         05/12/2021 22:34:26 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MOTOR_STEPPER
+OBJECT MODULE PLACED IN .\outHex\motor_stepper.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\motor_stepper\motor_stepper.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\.
+                    -.\74HC573;..\..\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\.
+                    -.\pcf8591;..\..\PWM;..\..\software_timer;..\..\TIMER;..\..\UART;..\..\motor_stepper) DEBUG OBJECTEXTEND PRINT(.\Listings
+                    -\motor_stepper.lst) TABS(2) OBJECT(.\outHex\motor_stepper.obj)
+
+line level    source
+
+   1          #include "motor_stepper.h"
+   2          
+   3          
+   4          #define MOTOR_STEPPER_PHASE   4
+   5          /*
+   6          四相步进电机旋转脉冲(一周)
+   7          p3 p2 p1 p0
+   8          1  1  0  0 =>0x0C
+   9          0  1  1  0 =>0x06
+  10          0  0  1  1 =>0x03
+  11          1  0  0  1 =>0x09
+  12          */
+  13          char motor_stepper_clockwise_code_list[MOTOR_STEPPER_PHASE] = {0x0c,0x06,0x03,0x09};
+  14          void motor_stepper_clockwise_once()
+  15          {
+  16   1        static int cur_phase = MOTOR_STEPPER_PHASE - 1;
+  17   1        PORT = motor_stepper_clockwise_code_list[cur_phase--];
+  18   1        if(cur_phase < 0)
+  19   1        {
+  20   2          cur_phase = MOTOR_STEPPER_PHASE - 1;
+  21   2        }
+  22   1      }
+  23          
+  24          void motor_stepper_unclockwise_once()
+  25          {
+  26   1        static int cur_phase = 0;
+  27   1        PORT = motor_stepper_clockwise_code_list[cur_phase++];
+  28   1        if(cur_phase >= MOTOR_STEPPER_PHASE)
+  29   1        {
+  30   2          cur_phase = 0;
+  31   2        }
+  32   1      }
+  33          
+  34          void motor_stepper_fast_stop()
+  35          {
+  36   1        PORT = 0x00;
+  37   1      }
+  38          
+  39          void motor_stepper_free()
+  40          {
+  41   1        PORT = 0xff;
+  42   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     72    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      8    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+C51 COMPILER V9.54   MOTOR_STEPPER                                                         05/12/2021 22:34:26 PAGE 2   
+
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,116 @@
+C51 COMPILER V9.54   MAIN                                                                  07/23/2021 21:38:56 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\outHex\main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\main.c ROM(COMPACT) OPTIMIZE(8,SPEED) BROWSE NOAREGS INCDIR(..\..\74H
+                    -C573;..\..\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\..\pcf
+                    -8591;..\..\PWM;..\..\software_timer;..\..\TIMER;..\..\UART;..\..\BUTTON_Matrix;..\..\AT24CXX;..\..\Thread) DEBUG OBJECTE
+                    -XTEND PRINT(.\Listings\main.lst) TABS(2) OBJECT(.\outHex\main.obj)
+
+line level    source
+
+   1          #include <reg52.h>
+   2          #include "UART.h"
+   3          #include "timer.h"
+   4          #include "Thread.h"
+   5          #include "exti_interrupt.h"
+   6          
+   7          //线程A
+   8          char  idata thread_a_stack[30];
+   9          thread_block  thread_a;
+  10          void thread_a_fun()
+  11          {
+  12   1        static int test_data = 0;
+  13   1        while(1)
+  14   1        { 
+  15   2          if(test_data >= 10)
+  16   2          {
+  17   3            test_data = 0;
+  18   3          }
+  19   2          putchar(test_data + '0');
+  20   2          test_data++;
+  21   2        }
+  22   1      
+  23   1      }
+  24          
+  25          //线程B
+  26          char idata thread_b_stack[30];
+  27          thread_block   thread_b;
+  28          void thread_b_fun()
+  29          {
+  30   1        static int test_data = 'a';
+  31   1        while(1)
+  32   1        {
+  33   2          if(test_data > 'z')
+  34   2          {
+  35   3            test_data = 'a';
+  36   3          }
+  37   2          putchar('b');
+  38   2          test_data++;
+  39   2        }
+  40   1      
+  41   1      }
+  42          
+  43          //线程C
+  44          char idata thread_c_stack[30];
+  45          thread_block   thread_c;
+  46          
+  47          void thread_c_fun()
+  48          {
+  49   1        static int test_data = 'A';
+  50   1        while(1)
+  51   1        {
+  52   2          if(test_data > 'Z')
+C51 COMPILER V9.54   MAIN                                                                  07/23/2021 21:38:56 PAGE 2   
+
+  53   2          {
+  54   3            test_data = 'A';
+  55   3          }
+  56   2          
+  57   2          putchar(test_data);
+  58   2          test_data++;
+  59   2        }
+  60   1      }
+  61          
+  62          void EXTI0_int_Handler()
+  63          {
+  64   1        putchar('\n');
+  65   1        thread_set_next_thread(&thread_b);
+  66   1        TIMER_INT();
+  67   1      }
+  68          
+  69          void  main()
+  70          {
+  71   1        Uart_init();
+  72   1        putchar('$');
+  73   1        thread_create(&thread_a,thread_a_fun,thread_a_stack,"thread_a");
+  74   1        thread_create(&thread_b,thread_b_fun,thread_b_stack,"thread_b");
+  75   1        thread_create(&thread_c,thread_c_fun,thread_c_stack,"thread_c");
+  76   1      
+  77   1        Timer0_set_callback(thread_change);
+  78   1        Timer0_Init();
+  79   1        exti0_interrupt_set_callback(EXTI0_int_Handler);
+  80   1        exti_interrupt_init();
+  81   1        
+  82   1        thread_start();
+  83   1        while(1)
+  84   1        {
+  85   2            
+  86   2        }
+  87   1      
+  88   1      } 
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    266    ----
+   CONSTANT SIZE    =     27    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     66    ----
+   IDATA SIZE       =     90    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

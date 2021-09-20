@@ -1,0 +1,44 @@
+C51 COMPILER V9.54   PCF8591                                                               05/07/2021 22:44:08 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE PCF8591
+OBJECT MODULE PLACED IN .\outHex\pcf8591.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\pcf8591\pcf8591.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\..\74HC573;..
+                    -\..\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\..\pcf8591;..
+                    -\..\PWM;..\..\software_timer;..\..\TIMER;..\..\UART) DEBUG OBJECTEXTEND PRINT(.\Listings\pcf8591.lst) TABS(2) OBJECT(.\o
+                    -utHex\pcf8591.obj)
+
+line level    source
+
+   1          #include "pcf8591.h"
+   2          #include "iic.h"
+   3          
+   4          /*
+   5          要注意pcf8591的一个奇怪性质:当你写入ch时，它返回的却是上一次写入的ch的ADC值。
+   6          所以函数pcf8591_get_adc_value的功能是，指定要转换的通道ch，返回上一次转换通道的ADC值。
+   7          */
+   8          unsigned char pcf8591_get_adc_value(unsigned char iic_slave,int ch)
+   9          {   
+  10   1          unsigned char buffer[1];
+  11   1       
+  12   1          buffer[0] = ch;
+  13   1          iic_write_data( iic_slave,buffer,1);
+  14   1          buffer[0] = 0;
+  15   1          iic_read_data( iic_slave,buffer,1);
+  16   1          return buffer[0];
+  17   1      }
+  18           
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     40    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       2
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

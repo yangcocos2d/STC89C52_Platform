@@ -1,0 +1,39 @@
+A51 MACRO ASSEMBLER  TASK_CHANGE                                                          05/14/2021 08:38:44 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.02c
+OBJECT MODULE PLACED IN .\outHex\task_change.obj
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE task_change.a51 SET(SMALL) DEBUG PRINT(.\Listings\task_change.lst) OBJE
+                      CT(.\outHex\task_change.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     
+                       2                     EXTRN CODE (mymain)
+                       3             
+                       4             
+                       5             
+0000                   6                                             ORG 0x00
+0000 120000   F        7                     START: LCALL mymain
+                       8                     
+                       9                     
+                      10                     
+                      11                     
+                      12                     
+                      13                     END
+A51 MACRO ASSEMBLER  TASK_CHANGE                                                          05/14/2021 08:38:44 PAGE     2
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+MYMAIN . . . . . .  C ADDR   -----       EXT
+START. . . . . . .  C ADDR   0000H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

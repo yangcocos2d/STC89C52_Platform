@@ -1,0 +1,249 @@
+C51 COMPILER V9.54   MAIN_002                                                              07/22/2021 17:05:27 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MAIN_002
+OBJECT MODULE PLACED IN .\outHex\main_002.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\main_002.c LARGE ROM(COMPACT) OPTIMIZE(9,SPEED) BROWSE INCDIR(..\..\7
+                    -4HC573;..\..\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\..\p
+                    -cf8591;..\..\PWM;..\..\software_timer;..\..\TIMER;..\..\UART;..\..\AT24CXX;..\..\PCF8574;..\..\KeyBoard) DEBUG OBJECTEXT
+                    -END PRINT(.\Listings\main_002.lst) TABS(2) OBJECT(.\outHex\main_002.obj)
+
+line level    source
+
+   1          #include <STC15F2K60S2.H>
+*** WARNING C318 IN LINE 1 OF ..\main_002.c: can't open file 'STC15F2K60S2.H'
+   2          #include <intrins.h>
+   3          #define uchar unsigned char   
+   4            
+   5          sbit RS=P3^2;
+*** ERROR C202 IN LINE 5 OF ..\main_002.c: 'P3': undefined identifier
+   6          sbit RW=P3^3;
+*** ERROR C202 IN LINE 6 OF ..\main_002.c: 'P3': undefined identifier
+   7          sbit E=P3^4;
+*** ERROR C202 IN LINE 7 OF ..\main_002.c: 'P3': undefined identifier
+   8          sbit T_RST = P3^5;
+*** ERROR C202 IN LINE 8 OF ..\main_002.c: 'P3': undefined identifier
+   9          sbit T_CLK = P3^6;
+*** ERROR C202 IN LINE 9 OF ..\main_002.c: 'P3': undefined identifier
+  10          sbit T_IO = P3^7;
+*** ERROR C202 IN LINE 10 OF ..\main_002.c: 'P3': undefined identifier
+  11          
+  12          uchar datechar[] = {"DATE:"};
+  13          uchar timechar[] = {"TIME:"};
+  14          uchar datebuffer[10]={0x32,0x30,0,0,0x2d,0,0,0x2d,0,0};
+  15          uchar timebuffer[8]={0,0,0x3a,0,0,0x3a,0,0};
+  16          uchar weekbuffer={0x30};
+  17          
+  18          void writeB(uchar dat)
+  19          {
+  20   1        uchar i;
+  21   1        for(i=8;i>0;i--)
+  22   1        {
+  23   2          T_IO=dat&0X01;
+*** ERROR C202 IN LINE 23 OF ..\main_002.c: 'T_IO': undefined identifier
+  24   2          T_CLK=1;
+*** ERROR C202 IN LINE 24 OF ..\main_002.c: 'T_CLK': undefined identifier
+  25   2          T_CLK=0;
+*** ERROR C202 IN LINE 25 OF ..\main_002.c: 'T_CLK': undefined identifier
+  26   2          dat=dat>>1;
+  27   2        }
+  28   1      }
+  29          uchar ReadB(void)
+  30          {
+  31   1        uchar i,readdat=0;
+  32   1        for(i=8;i>0;i--)
+  33   1        {
+  34   2          readdat=readdat>>1;
+  35   2          if(T_IO)
+*** ERROR C202 IN LINE 35 OF ..\main_002.c: 'T_IO': undefined identifier
+  36   2          {
+  37   3            readdat|=0x80;
+  38   3          }
+  39   2          T_CLK=1;
+*** ERROR C202 IN LINE 39 OF ..\main_002.c: 'T_CLK': undefined identifier
+  40   2          T_CLK=0;
+C51 COMPILER V9.54   MAIN_002                                                              07/22/2021 17:05:27 PAGE 2   
+
+*** ERROR C202 IN LINE 40 OF ..\main_002.c: 'T_CLK': undefined identifier
+  41   2        }
+  42   1        return(readdat);
+  43   1      }
+  44          void W1302(uchar address,uchar dat)
+  45          {
+  46   1        T_RST=0;
+*** ERROR C202 IN LINE 46 OF ..\main_002.c: 'T_RST': undefined identifier
+  47   1        T_CLK=0;
+*** ERROR C202 IN LINE 47 OF ..\main_002.c: 'T_CLK': undefined identifier
+  48   1        _nop_();
+  49   1        _nop_();
+  50   1        T_RST=1;
+*** ERROR C202 IN LINE 50 OF ..\main_002.c: 'T_RST': undefined identifier
+  51   1        _nop_();
+  52   1        _nop_();
+  53   1        writeB(address);
+  54   1        writeB(dat);
+  55   1        T_CLK=1;
+*** ERROR C202 IN LINE 55 OF ..\main_002.c: 'T_CLK': undefined identifier
+  56   1        T_RST=0;
+*** ERROR C202 IN LINE 56 OF ..\main_002.c: 'T_RST': undefined identifier
+  57   1      }
+  58          
+  59          uchar R1302(uchar address)
+  60          {
+  61   1        uchar dat=0;
+  62   1        T_RST=0;
+*** ERROR C202 IN LINE 62 OF ..\main_002.c: 'T_RST': undefined identifier
+  63   1        T_CLK=0;
+*** ERROR C202 IN LINE 63 OF ..\main_002.c: 'T_CLK': undefined identifier
+  64   1        T_RST=1;
+*** ERROR C202 IN LINE 64 OF ..\main_002.c: 'T_RST': undefined identifier
+  65   1        writeB(address);
+  66   1        dat=ReadB();
+  67   1        T_CLK=1;
+*** ERROR C202 IN LINE 67 OF ..\main_002.c: 'T_CLK': undefined identifier
+  68   1        T_RST=0;
+*** ERROR C202 IN LINE 68 OF ..\main_002.c: 'T_RST': undefined identifier
+  69   1        return(dat);    
+  70   1      }
+  71          
+  72          void delay(int n)
+  73          {
+  74   1        int i=0,j=0;
+  75   1        for(i=0;i<=n;n++);
+  76   1        {
+  77   2        for(j=0;j<=200;j++);
+  78   2        }
+  79   1      }
+  80          //写数据函数
+  81          void writedat (uchar dat)
+  82          {
+  83   1        RS=1;
+*** ERROR C202 IN LINE 83 OF ..\main_002.c: 'RS': undefined identifier
+  84   1        RW=0;
+*** ERROR C202 IN LINE 84 OF ..\main_002.c: 'RW': undefined identifier
+  85   1        E=0;
+*** ERROR C202 IN LINE 85 OF ..\main_002.c: 'E': undefined identifier
+  86   1        P2=dat;
+*** ERROR C202 IN LINE 86 OF ..\main_002.c: 'P2': undefined identifier
+  87   1        delay(5);
+C51 COMPILER V9.54   MAIN_002                                                              07/22/2021 17:05:27 PAGE 3   
+
+  88   1        E=1;
+*** ERROR C202 IN LINE 88 OF ..\main_002.c: 'E': undefined identifier
+  89   1        E=0;
+*** ERROR C202 IN LINE 89 OF ..\main_002.c: 'E': undefined identifier
+  90   1        
+  91   1      }
+  92          
+  93          void writecom (uchar com)
+  94          {
+  95   1        RS=0;
+*** ERROR C202 IN LINE 95 OF ..\main_002.c: 'RS': undefined identifier
+  96   1        RW=0;
+*** ERROR C202 IN LINE 96 OF ..\main_002.c: 'RW': undefined identifier
+  97   1        E=0;
+*** ERROR C202 IN LINE 97 OF ..\main_002.c: 'E': undefined identifier
+  98   1        P2=com;
+*** ERROR C202 IN LINE 98 OF ..\main_002.c: 'P2': undefined identifier
+  99   1        delay(5); 
+ 100   1        E=1;
+*** ERROR C202 IN LINE 100 OF ..\main_002.c: 'E': undefined identifier
+ 101   1        E=0;
+*** ERROR C202 IN LINE 101 OF ..\main_002.c: 'E': undefined identifier
+ 102   1      }
+ 103          void initlcd()
+ 104          {
+ 105   1        writecom(0x38);
+ 106   1        writecom(0x0c);
+ 107   1        writecom(0x06);
+ 108   1        writecom(0x01);
+ 109   1      }
+ 110          
+ 111          void display()
+ 112          {
+ 113   1        int i=0,temp=0;
+ 114   1      //  年
+ 115   1        temp=R1302(0X8D);
+ 116   1        datebuffer[2]='2';
+ 117   1        datebuffer[3]='0';
+ 118   1      //  星期
+ 119   1        temp=R1302(0X8b);
+ 120   1        weekbuffer='1';
+ 121   1      //  月份
+ 122   1        temp=R1302(0X89);
+ 123   1        datebuffer[5]=0x30+temp/16;
+ 124   1        datebuffer[6]=0x30+temp%16;
+ 125   1      //  日
+ 126   1        temp=R1302(0X87);
+ 127   1        datebuffer[8]=0x30+temp/16;
+ 128   1        datebuffer[9]=0x30+temp%16;
+ 129   1      //  小时
+ 130   1        temp=R1302(0X85);
+ 131   1        temp=temp&0x7f;
+ 132   1        timebuffer[0]=0x30+temp/16;
+ 133   1        timebuffer[1]=0x30+temp%16;
+ 134   1      //  分钟
+ 135   1        temp=R1302(0X83);
+ 136   1        temp=temp&0x7f;
+ 137   1        timebuffer[3]=0x30+temp/16;
+ 138   1        timebuffer[4]=0x30+temp%16;
+ 139   1      //  秒
+ 140   1        temp=R1302(0X81);
+ 141   1        temp=temp&0x7f;
+C51 COMPILER V9.54   MAIN_002                                                              07/22/2021 17:05:27 PAGE 4   
+
+ 142   1        timebuffer[6]=0x30+temp/16;
+ 143   1        timebuffer[7]=0x30+temp%16;
+ 144   1      //  lcd 第一行
+ 145   1        writecom(0x80);
+ 146   1        for(i=0;i<5;i++)
+ 147   1        {
+ 148   2          writedat (datechar[i]);
+ 149   2        }
+ 150   1      //  lcd 第二行
+ 151   1        writecom(0xc0);
+ 152   1        for(i=0;i<5;i++)
+ 153   1        {
+ 154   2          writedat(timechar[i]);
+ 155   2        }
+ 156   1      //  显示日历
+ 157   1        writecom (0x86);
+ 158   1        for(i=0;i<10;i++)
+ 159   1        {
+ 160   2          writedat(datebuffer[i]);
+ 161   2        }
+ 162   1        writecom(0xc6);
+ 163   1        for(i=0;i<8;i++)
+ 164   1        {
+ 165   2          writedat(timebuffer[i]);
+ 166   2        }
+ 167   1        writedat(0x11);
+ 168   1        writedat(weekbuffer);
+ 169   1      }
+ 170          void main()
+ 171          {
+ 172   1        initlcd();
+ 173   1      W1302(0x8e,0x00); 
+ 174   1      //  写入年
+ 175   1        W1302(0x8c,0x20);
+ 176   1      //  写入星期
+ 177   1        W1302(0x8a,0x01);
+ 178   1      //  写入月
+ 179   1        W1302(0x88,0x03);
+ 180   1      //  写入日
+ 181   1        W1302(0x86,0x27);
+ 182   1      //  写入时
+ 183   1        W1302(0x84,0x12);
+ 184   1      //  写入分
+ 185   1        W1302(0x82,0x11);
+ 186   1      //  写入秒
+ 187   1        W1302(0x80,0x05);
+ 188   1        
+ 189   1        W1302(0x8e,0x80);
+ 190   1        while(1)
+ 191   1        {
+ 192   2          display();
+ 193   2        }
+ 194   1      }
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  34 ERROR(S)

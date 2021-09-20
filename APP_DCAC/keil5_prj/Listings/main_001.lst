@@ -1,0 +1,119 @@
+C51 COMPILER V9.54   MAIN_001                                                              05/15/2021 16:21:48 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MAIN_001
+OBJECT MODULE PLACED IN .\outHex\main_001.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\main_001.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\..\74HC573;..\..\BUTTON
+                    -;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\..\pcf8591;..\..\PWM;..
+                    -\..\software_timer;..\..\TIMER;..\..\UART) DEBUG OBJECTEXTEND PRINT(.\Listings\main_001.lst) TABS(2) OBJECT(.\outHex\mai
+                    -n_001.obj)
+
+line level    source
+
+   1          #include "LCD1602.h"
+   2          #include "UART.h"
+   3          #include "button.h"
+   4          #include "timer.h"
+   5          #include "pwm.h"
+   6          #include "software_timer.h"
+   7          #include "mystring.h"
+   8          #include "iic.h"
+   9          #include "pcf8591.h"
+  10          
+  11          sbit FET_A = P2^0;
+  12          sbit FET_B = P2^1;
+  13          sbit Boost_Ctrl = P2^2;
+  14           
+  15          #define SPWM_OUT_LIST_LEN 10
+  16          
+  17          
+  18           
+  19          int pwm_out = 0;
+  20          int idata pwm_out_list[SPWM_OUT_LIST_LEN ] =   {0,1,0,1,1,1,1,0,1,0};
+  21          int idata pwm_index = 0;
+  22          pwm idata pwm_boost = {50,1000,0};
+  23          
+  24          void fetctrl_gen()  //1ms 
+  25          {
+  26   1       
+  27   1         pwm_index++;
+  28   1         if(pwm_index >= 2*SPWM_OUT_LIST_LEN)
+  29   1         {
+  30   2           pwm_index = 0;
+  31   2         }
+  32   1         
+  33   1         pwm_out =  pwm_out_list[pwm_index%SPWM_OUT_LIST_LEN];
+  34   1         
+  35   1         if(pwm_out == 0)
+  36   1         {
+  37   2            FET_A= 1;
+  38   2            FET_B =1;
+  39   2         }
+  40   1         else
+  41   1         {
+  42   2            if(pwm_index >= SPWM_OUT_LIST_LEN)
+  43   2           {
+  44   3           
+  45   3              FET_A= 1;
+  46   3              FET_B =0;
+  47   3           }
+  48   2           else
+  49   2           {
+  50   3              FET_A= 0;
+  51   3              FET_B =1;
+  52   3           }
+C51 COMPILER V9.54   MAIN_001                                                              05/15/2021 16:21:48 PAGE 2   
+
+  53   2         
+  54   2         }
+  55   1       
+  56   1        pwm_stepper(&pwm_boost);
+  57   1        Boost_Ctrl = pwm_is_high(&pwm_boost);
+  58   1      
+  59   1      }
+  60          soft_timer timer_fetctrl_gen = {0,1,fetctrl_gen};
+  61          
+  62          
+  63          void timer_Handler()
+  64          { 
+  65   1        soft_timer_stepper(&timer_fetctrl_gen);
+  66   1      }
+  67          
+  68          void exti0_Handler()
+  69          {
+  70   1        
+  71   1        //printf("exti0_Handler\n");
+  72   1      }
+  73          
+  74           
+  75          void main()
+  76          { 
+  77   1        Uart_init();
+  78   1        LCD_Init();
+  79   1       
+  80   1        Timer0_set_callback(timer_Handler);
+  81   1        Timer0_Init();
+  82   1       
+  83   1        LCD_Puts(0,0,"DC-AC inverter");
+  84   1        LCD_Puts(0,1,"220V/50HZ");
+  85   1        
+  86   1        while(1)
+  87   1        {   
+  88   2           soft_timer_check(&timer_fetctrl_gen,0);
+  89   2        }
+  90   1      
+  91   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    185    ----
+   CONSTANT SIZE    =     25    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      9    ----
+   IDATA SIZE       =     28    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

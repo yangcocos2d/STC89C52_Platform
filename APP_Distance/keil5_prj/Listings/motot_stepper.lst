@@ -1,0 +1,26 @@
+C51 COMPILER V9.54   MOTOT_STEPPER                                                         05/12/2021 19:24:21 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MOTOT_STEPPER
+OBJECT MODULE PLACED IN .\outHex\motot_stepper.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\motor_stepper\motot_stepper.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\.
+                    -.\74HC573;..\..\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\.
+                    -.\pcf8591;..\..\PWM;..\..\software_timer;..\..\TIMER;..\..\UART;..\..\motor_stepper) DEBUG OBJECTEXTEND PRINT(.\Listings
+                    -\motot_stepper.lst) TABS(2) OBJECT(.\outHex\motot_stepper.obj)
+
+line level    source
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

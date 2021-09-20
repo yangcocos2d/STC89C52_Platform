@@ -1,0 +1,234 @@
+C51 COMPILER V9.54   MAIN                                                                  05/14/2021 22:14:17 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\outHex\main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\main.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\..\74HC573;..\..\BUTTON;..\
+                    -..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\..\pcf8591;..\..\PWM;..\..\
+                    -software_timer;..\..\TIMER;..\..\UART;..\..\BUTTON_Matrix;..\..\AT24CXX) DEBUG OBJECTEXTEND PRINT(.\Listings\main.lst) T
+                    -ABS(2) OBJECT(.\outHex\main.obj)
+
+line level    source
+
+   1          #include "LCD1602.h"
+   2          #include "UART.h"
+   3          #include "timer.h"
+   4          #include "software_timer.h"
+   5          #include "mystring.h"
+   6          #include "BUTTON_Matrix.h"
+   7          #include "pwm.h"
+   8          #include "AT24CXX.h"
+   9          
+  10            
+  11          typedef struct st_input
+  12          {
+  13            unsigned char button_code;
+  14            int button_list_index;
+  15            char button_list[20];
+  16          
+  17          }st_input;
+  18           
+  19          st_input idata st_input_btn;
+  20           
+  21          
+  22          char idata lcd_buffer[2][20];
+  23           
+  24          
+  25           
+  26          
+  27          //液晶屏刷屏...
+  28          void lcd_update(void *arg)
+  29          {
+  30   1        //首先清理屏幕...
+  31   1        str_copy(lcd_buffer[0],"                ");
+  32   1        str_copy(lcd_buffer[1],"                ");
+  33   1        
+  34   1         
+  35   1        //把文字显示在LCD上面
+  36   1        LCD_Puts(0,0,lcd_buffer[0]);
+  37   1        LCD_Puts(0,1,lcd_buffer[1]);
+  38   1      
+  39   1        
+  40   1      }
+*** WARNING C280 IN LINE 28 OF ..\main.c: 'arg': unreferenced local variable
+  41          
+  42          soft_timer idata timer_lcd_update = {0,20,lcd_update};
+  43          
+  44          //矩阵键盘检查
+  45          void button_deal(void *arg)
+  46          {
+  47   1        //如果键盘锁定时间到了...
+  48   1         
+  49   1          st_input_btn.button_code = button_matrix_scan_wait_free();
+  50   1       
+  51   1         
+C51 COMPILER V9.54   MAIN                                                                  05/14/2021 22:14:17 PAGE 2   
+
+  52   1        if(st_input_btn.button_code!=0)
+  53   1        { 
+  54   2          st_input_btn.button_list[st_input_btn.button_list_index++] = st_input_btn.button_code;
+  55   2          st_input_btn.button_code = 0;
+  56   2       
+  57   2          
+  58   2          
+  59   2        }
+  60   1         
+  61   1      
+  62   1         
+  63   1        
+  64   1      }
+*** WARNING C280 IN LINE 45 OF ..\main.c: 'arg': unreferenced local variable
+  65          
+  66          soft_timer idata timer_button_deal = {0,2,button_deal};
+  67          
+  68          
+  69          pwm idata pwm_beep = {50,2,0};
+  70          void generate_pwm()
+  71          {
+  72   1        //蜂鸣器报警
+  73   1        pwm_stepper(&pwm_beep);
+  74   1        //如果密码输入错误，且报警倒计时还没归0，就蜂鸣器报警...
+  75   1        if(st_password_system.error_times > 0 && st_time_data.alarm_dec_counter > 0)
+*** ERROR C200 IN LINE 75 OF ..\main.c: left side of '.' requires struct/union
+  76   1        {
+  77   2          beep = 0;//pwm_is_high(&pwm_beep);
+*** ERROR C202 IN LINE 77 OF ..\main.c: 'beep': undefined identifier
+  78   2        }
+  79   1        else
+  80   1        {
+  81   2          beep = 1;
+*** ERROR C202 IN LINE 81 OF ..\main.c: 'beep': undefined identifier
+  82   2        }
+  83   1        
+  84   1      }
+  85          soft_timer idata timer_generate_pwm = {0,1,generate_pwm};
+  86          
+  87          void second_counter()
+  88          {
+  89   1        //秒表计时
+  90   1        if(sys_lcd_pages == lcd_page_show_input)
+*** ERROR C202 IN LINE 90 OF ..\main.c: 'sys_lcd_pages': undefined identifier
+  91   1        {
+  92   2          st_time_data.sys_second_counter++;
+  93   2        }
+  94   1         
+  95   1      
+  96   1        if(st_time_data.alarm_dec_counter > 0)
+  97   1        {
+  98   2          st_time_data.alarm_dec_counter--;
+  99   2        }
+ 100   1        
+ 101   1        if(st_time_data.button_lock_dec_counter > 0)
+ 102   1        {
+ 103   2          st_time_data.button_lock_dec_counter--;
+ 104   2        }
+ 105   1      }
+ 106          soft_timer idata timer_second_counter = {0,100,second_counter};
+ 107          
+ 108          
+C51 COMPILER V9.54   MAIN                                                                  05/14/2021 22:14:17 PAGE 3   
+
+ 109          void user_monitor()
+ 110          {
+ 111   1        //在显示"welcome"的界面时...
+ 112   1        if(sys_lcd_pages  == lcd_page_show_welcome)
+*** ERROR C202 IN LINE 112 OF ..\main.c: 'sys_lcd_pages': undefined identifier
+ 113   1        {
+ 114   2            st_time_data.sys_second_counter = 0;
+ 115   2            st_password_system.error_times = 0;
+ 116   2            st_time_data.alarm_dec_counter = 0;
+ 117   2            st_time_data.button_lock_dec_counter = 0;
+ 118   2        }
+ 119   1        else
+ 120   1        {
+ 121   2          //如果用户输入时间大于了限制时间...
+ 122   2          if( st_time_data.sys_second_counter > MONITOR_INPUT_TIMR_LIMIT)
+ 123   2          {
+ 124   3            st_password_system.error_times++;
+ 125   3            st_time_data.sys_second_counter = 0;
+ 126   3            st_time_data.alarm_dec_counter = ALARM_TIME;
+ 127   3          }
+ 128   2          //如果用户输入密码错误大于3次...
+ 129   2          if(st_password_system.error_times >= 3)
+ 130   2          {
+ 131   3            st_time_data.button_lock_dec_counter = LOCK_TIME;
+ 132   3            st_password_system.error_times = 0;
+ 133   3          }
+ 134   2          //如果报警倒计时还没结束...
+ 135   2          if(st_time_data.alarm_dec_counter > 0)
+ 136   2          {
+ 137   3            sys_lcd_pages = lcd_page_alarm;
+*** ERROR C202 IN LINE 137 OF ..\main.c: 'sys_lcd_pages': undefined identifier
+ 138   3          }
+ 139   2          else
+ 140   2          {
+ 141   3            sys_lcd_pages = lcd_page_show_input;
+*** ERROR C202 IN LINE 141 OF ..\main.c: 'sys_lcd_pages': undefined identifier
+ 142   3          }
+ 143   2          //如果键盘锁定倒计时还没结束..
+ 144   2          if(st_time_data.button_lock_dec_counter > 0)
+ 145   2          {
+ 146   3            sys_lcd_pages = lcd_page_lock;
+*** ERROR C202 IN LINE 146 OF ..\main.c: 'sys_lcd_pages': undefined identifier
+ 147   3          }
+ 148   2          
+ 149   2        }
+ 150   1        
+ 151   1      }
+ 152          soft_timer idata timer_user_monitor = {0,10,user_monitor};
+ 153          
+ 154          //定时器服务函数。推进一个节拍。
+ 155          void timer_Handler()
+ 156          { 
+ 157   1        soft_timer_stepper(&timer_lcd_update);
+ 158   1        soft_timer_stepper(&timer_button_deal);
+ 159   1        soft_timer_stepper(&timer_generate_pwm);  
+ 160   1        soft_timer_stepper(&timer_second_counter);
+ 161   1        soft_timer_stepper(&timer_user_monitor);
+ 162   1      }
+ 163          
+ 164          void exti0_Handler()
+ 165          {
+ 166   1        
+C51 COMPILER V9.54   MAIN                                                                  05/14/2021 22:14:17 PAGE 4   
+
+ 167   1       
+ 168   1      }
+ 169          //密码读取，从AT24C02读取密码
+ 170          void password_read()
+ 171          {
+ 172   1        AT24CXX_read(0,st_password_system.password,PASSWORD_LEN);
+ 173   1        if(st_password_system.password[0]>='9' || st_password_system.password[0]<='0' )
+ 174   1        {
+ 175   2          str_copy(st_password_system.password,PASSWORD_INIT);
+ 176   2        }
+ 177   1      }
+ 178           
+ 179          //密码保存，把密码存入AT24C02
+ 180          void password_save()
+ 181          {
+ 182   1        AT24CXX_write(0,st_password_system.password,PASSWORD_LEN);
+ 183   1      }
+ 184          
+ 185          void main()
+ 186          { 
+ 187   1       
+ 188   1        
+ 189   1        Uart_init();//串口通信初始化
+ 190   1        LCD_Init(); //LCD液晶屏初始化
+ 191   1        Timer0_set_callback(timer_Handler);//定时器0服务函数初始化
+ 192   1        Timer0_Init();//定时器0初始化
+ 193   1        password_read();//从存储器AT24C02中读取密码
+ 194   1        
+ 195   1        while(1)
+ 196   1        {   
+ 197   2          soft_timer_check(&timer_lcd_update,0);  //看是不是该LCD刷新屏幕了，如果是，执行LCD刷屏
+ 198   2          soft_timer_check(&timer_button_deal,0); //看是不是该检测按键了
+ 199   2          soft_timer_check(&timer_generate_pwm,0);//看是不是该给蜂鸣器报警了
+ 200   2          soft_timer_check(&timer_second_counter,0);//时间累加函数。秒表计时器
+ 201   2          soft_timer_check(&timer_user_monitor,0);//看是不是该监测用户的输入时间了
+ 202   2        }
+ 203   1      
+ 204   1      }
+
+C51 COMPILATION COMPLETE.  2 WARNING(S),  8 ERROR(S)

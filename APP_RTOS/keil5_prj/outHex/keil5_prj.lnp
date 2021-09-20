@@ -1,0 +1,8 @@
+".\outHex\main.obj",
+".\outHex\UART.obj",
+".\outHex\timer.obj",
+".\outHex\Thread.obj",
+".\outHex\exti_interrupt.obj" 
+TO ".\outHex\keil5_prj" 
+PRINT(".\Listings\keil5_prj.m51") RAMSIZE(256) 
+CODE( 0X0000-0X1FFF )

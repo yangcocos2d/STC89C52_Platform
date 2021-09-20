@@ -1,0 +1,137 @@
+C51 COMPILER V9.54   THREAD                                                                07/23/2021 08:17:49 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE THREAD
+OBJECT MODULE PLACED IN .\outHex\Thread.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\Thread\Thread.c ROM(COMPACT) OPTIMIZE(8,SPEED) BROWSE NOAREGS INCD
+                    -IR(..\..\74HC573;..\..\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystri
+                    -ng;..\..\pcf8591;..\..\PWM;..\..\software_timer;..\..\TIMER;..\..\UART;..\..\BUTTON_Matrix;..\..\AT24CXX;..\..\Thread) D
+                    -EBUG OBJECTEXTEND PRINT(.\Listings\Thread.lst) TABS(2) OBJECT(.\outHex\Thread.obj)
+
+line level    source
+
+   1          #include "Thread.h"
+   2          
+   3          thread_manage_list idata  g_thread_manage_list = {{0},0,0,0};
+   4          
+   5          void thread_create(thread_block* block,thread_pfun pfun,char* sp_init,char *name)
+   6          {
+   7   1        block->PC_L =  (unsigned int)pfun%256 ;
+   8   1        block->PC_H =  (unsigned int)pfun/256 ;
+   9   1        block->sp = sp_init;
+*** WARNING C260 IN LINE 9 OF ..\..\Thread\Thread.c: '=': pointer truncation
+  10   1        block->status = normal;
+  11   1        block->name = name;
+  12   1        g_thread_manage_list.list[g_thread_manage_list.list_len] = block;
+  13   1        g_thread_manage_list.list_len++;
+  14   1      }
+  15          
+  16          void thread_suspend(thread_block* block)
+  17          {
+  18   1        block->status = suspend;
+  19   1      }
+  20          
+  21          void thread_normal(thread_block* block)
+  22          {
+  23   1        block->status = normal;
+  24   1      }
+  25          
+  26          void thread_set_next_thread(thread_block* block)
+  27          {
+  28   1        if(block != 0)
+  29   1        {
+  30   2          g_thread_manage_list.thread_next = block;
+  31   2        }
+  32   1      
+  33   1      }
+  34          
+  35          thread_block* thread_schedule(void)
+  36          {
+  37   1        static int next_thread = 0;
+  38   1        do
+  39   1        {
+  40   2          next_thread++;
+  41   2          if(next_thread >= g_thread_manage_list.list_len)
+  42   2          {
+  43   3            next_thread = 0;
+  44   3          }
+  45   2        }
+  46   1        while(g_thread_manage_list.list[next_thread]->status != normal );
+  47   1      
+  48   1        return g_thread_manage_list.list[next_thread];
+  49   1        
+  50   1      }
+  51          
+C51 COMPILER V9.54   THREAD                                                                07/23/2021 08:17:49 PAGE 2   
+
+  52          void thread_start(void)
+  53          {
+  54   1        g_thread_manage_list.thread_cur = 0;
+  55   1        g_thread_manage_list.thread_next = thread_schedule();
+  56   1      }
+  57          
+  58          char thread_change(char sp)
+  59          {
+  60   1        char *my_sp =(char *)sp;
+  61   1        thread_block* p_th_block = 0;
+  62   1      
+  63   1        p_th_block = g_thread_manage_list.thread_cur;
+  64   1        if(p_th_block != 0)
+  65   1        {
+  66   2          p_th_block->sp  = (char)(my_sp - THREAD_CONTEXT_SIZE);
+  67   2          p_th_block->R7  = *(my_sp);
+  68   2          p_th_block->R6  = *(my_sp-1);
+  69   2          p_th_block->R5  = *(my_sp-2);
+  70   2          p_th_block->R4  = *(my_sp-3);
+  71   2          p_th_block->R3  = *(my_sp-4);
+  72   2          p_th_block->R2  = *(my_sp-5);
+  73   2          p_th_block->R1  = *(my_sp-6);
+  74   2          p_th_block->R0  = *(my_sp-7);
+  75   2          p_th_block->PSW = *(my_sp-8);
+  76   2          p_th_block->DPL = *(my_sp-9);
+  77   2          p_th_block->DPH = *(my_sp-10);
+  78   2          p_th_block->B   = *(my_sp-11);
+  79   2          p_th_block->ACC = *(my_sp-12);
+  80   2          p_th_block->PC_H= *(my_sp-13);
+  81   2          p_th_block->PC_L= *(my_sp-14); 
+  82   2        }
+  83   1       
+  84   1        p_th_block = g_thread_manage_list.thread_next;
+  85   1        my_sp      = (char *)(p_th_block->sp + THREAD_CONTEXT_SIZE);
+  86   1        *(my_sp)   = p_th_block->R7 ;
+  87   1        *(my_sp-1) = p_th_block->R6 ;
+  88   1        *(my_sp-2) = p_th_block->R5 ;
+  89   1        *(my_sp-3) = p_th_block->R4 ;
+  90   1        *(my_sp-4) = p_th_block->R3 ;
+  91   1        *(my_sp-5) = p_th_block->R2 ;
+  92   1        *(my_sp-6) = p_th_block->R1 ;
+  93   1        *(my_sp-7) = p_th_block->R0 ;
+  94   1        *(my_sp-8) = p_th_block->PSW ;
+  95   1        *(my_sp-9) = p_th_block->DPL ;
+  96   1        *(my_sp-10)= p_th_block->DPH ;
+  97   1        *(my_sp-11)= p_th_block->B ;
+  98   1        *(my_sp-12)= p_th_block->ACC ;
+  99   1        *(my_sp-13)= p_th_block->PC_H;
+ 100   1        *(my_sp-14)= p_th_block->PC_L;
+ 101   1        
+ 102   1        g_thread_manage_list.thread_cur = g_thread_manage_list.thread_next;
+ 103   1        g_thread_manage_list.thread_next = thread_schedule();
+ 104   1        
+ 105   1        return (char)my_sp;
+ 106   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1066    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+C51 COMPILER V9.54   THREAD                                                                07/23/2021 08:17:49 PAGE 3   
+
+   DATA SIZE        =      2      18
+   IDATA SIZE       =     23    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)

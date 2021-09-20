@@ -1,0 +1,107 @@
+C51 COMPILER V9.54   BUTTON_MATRIX                                                         05/10/2021 21:02:23 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE BUTTON_MATRIX
+OBJECT MODULE PLACED IN .\outHex\BUTTON_Matrix.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\BUTTON_Matrix\BUTTON_Matrix.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\.
+                    -.\74HC573;..\..\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\.
+                    -.\pcf8591;..\..\PWM;..\..\software_timer;..\..\TIMER;..\..\UART;..\..\BUTTON_Matrix;..\..\AT24CXX) DEBUG OBJECTEXTEND PR
+                    -INT(.\Listings\BUTTON_Matrix.lst) TABS(2) OBJECT(.\outHex\BUTTON_Matrix.obj)
+
+line level    source
+
+   1          #include "BUTTON_Matrix.h"
+   2          
+   3          typedef struct st_button_matrix_btn
+   4          {
+   5              unsigned char button_pre;
+   6              unsigned char button_cur;
+   7          }st_button_matrix_btn;
+   8          
+   9          st_button_matrix_btn st_button_matrix_btn_data;
+  10          
+  11          
+  12          unsigned char button_matrix_scan_wait_free()
+  13          {
+  14   1        unsigned char ret = 0;
+  15   1        st_button_matrix_btn_data.button_pre = st_button_matrix_btn_data.button_cur;
+  16   1        st_button_matrix_btn_data.button_cur =   button_matrix_scan();
+  17   1        if( st_button_matrix_btn_data.button_cur == 0 
+  18   1          && st_button_matrix_btn_data.button_pre!=0)
+  19   1          {
+  20   2            ret = st_button_matrix_btn_data.button_pre;
+  21   2            st_button_matrix_btn_data.button_pre = 0;
+  22   2      
+  23   2          }
+  24   1        return ret;
+  25   1      }
+  26          
+  27          void button_matrix_delayus(unsigned int us)
+  28          {
+  29   1        unsigned int i = us/13;
+  30   1        while(i--);
+  31   1      
+  32   1      }
+  33          
+  34          void button_matrix_delayms(unsigned int ms)
+  35          {
+  36   1        unsigned int i =ms;
+  37   1        for(i=ms;i>0;i--)
+  38   1        {
+  39   2            button_matrix_delayus(1000);
+  40   2        }
+  41   1      }
+  42          
+  43          unsigned char button_matrix_scan()
+  44          {
+  45   1        unsigned char X_button,Y_button,code_button=0;
+  46   1        
+  47   1        KEY_PORT = 0x0F;
+  48   1        button_matrix_delayms(10);
+  49   1        Y_button = KEY_PORT; 
+  50   1        Y_button&=0x0F;
+  51   1        
+  52   1        KEY_PORT = 0xF0;
+C51 COMPILER V9.54   BUTTON_MATRIX                                                         05/10/2021 21:02:23 PAGE 2   
+
+  53   1        button_matrix_delayms(10);
+  54   1        X_button = KEY_PORT ;
+  55   1        X_button &=0xF0;
+  56   1        
+  57   1        switch(Y_button | X_button)
+  58   1        {
+  59   2          case 119:code_button = '7';break;
+  60   2          case 123:code_button = '8';break;
+  61   2          case 125:code_button = '9';break;
+  62   2          case 126:code_button = ' ';break;
+  63   2          case 183:code_button = '4';break;
+  64   2          case 187:code_button = '5';break;
+  65   2          case 189:code_button = '6';break;
+  66   2          case 190:code_button = ' ';break;
+  67   2          case 215:code_button = '1';break;
+  68   2          case 219:code_button = '2';break;
+  69   2          case 221:code_button = '3';break;
+  70   2          case 222:code_button = ' ';break;
+  71   2          case 231:code_button = ' ';break;
+  72   2          case 235:code_button = ' ';break;
+  73   2          case 237:code_button = ' ';break;
+  74   2          case 238:code_button = ' ';break;
+  75   2          default:break;
+  76   2        }
+  77   1        KEY_PORT = 0xFF;
+  78   1        return code_button;//code_button;
+  79   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    216    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2       2
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

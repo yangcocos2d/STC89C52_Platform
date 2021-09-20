@@ -1,0 +1,284 @@
+C51 COMPILER V9.54   MAIN_002                                                              07/21/2021 18:53:17 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MAIN_002
+OBJECT MODULE PLACED IN .\outHex\main_002.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\main_002.c OPTIMIZE(9,SPEED) BROWSE INCDIR(..\..\74HC573;..\..\BUTTON
+                    -;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\..\pcf8591;..\..\PWM;..
+                    -\..\software_timer;..\..\TIMER;..\..\UART;..\..\AT24CXX) DEBUG OBJECTEXTEND PRINT(.\Listings\main_002.lst) TABS(2) OBJEC
+                    -T(.\outHex\main_002.obj)
+
+line level    source
+
+   1          
+   2          #include <reg52.h>
+   3          #include "pcf8591.h"
+   4          #include "timer.h"
+   5          #include "software_timer.h"
+   6          #include "lcd1602.h"
+   7          #include "mystring.h"
+   8          #include "button.h"
+   9          
+  10          #define KEY_IS_PRESSED  1
+  11          #define FREQ_MIN_SET    1
+  12          #define FREQ_MAX_SET    100 
+  13          #define VOUT_MAX_SET    50
+  14          
+  15          #define WAVE_ROM_SIZE   256
+  16          
+  17          //ROM点数:256 虚拟表长:512 中断频率:512Hz 中断时间:1.95ms 最高正弦输出频率:512/5 = 1
+             -02.4
+  18          code unsigned char Wave_ROM_Sine[WAVE_ROM_SIZE] = 
+  19          {
+  20              128,131,134,137,140,143,146,149,152,155,
+  21              158,162,165,167,170,173,176,179,182,185,
+  22              188,190,193,196,198,201,203,206,208,211,
+  23              213,215,218,220,222,224,226,228,230,232,
+  24              234,235,237,238,240,241,243,244,245,246,
+  25              248,249,250,250,251,252,253,253,254,254,
+  26              254,255,255,255,255,255,255,255,254,254,
+  27              254,253,253,252,251,250,250,249,248,246,
+  28              245,244,243,241,240,238,237,235,234,232,
+  29              230,228,226,224,222,220,218,215,213,211,
+  30              208,206,203,201,198,196,193,190,188,185,
+  31              182,179,176,173,170,167,165,162,158,155,
+  32              152,149,146,143,140,137,134,131,128,124,
+  33              121,118,115,112,109,106,103,100,97,93,
+  34              90,88,85,82,79,76,73,70,67,65,
+  35              62,59,57,54,52,49,47,44,42,40,
+  36              37,35,33,31,29,27,25,23,21,20,
+  37              18,17,15,14,12,11,10,9, 7, 6,
+  38              5, 5, 4, 3, 2, 2, 1, 1, 1, 0,
+  39              0, 0, 0, 0, 0, 0, 1, 1, 1, 2,
+  40              2, 3, 4, 5, 5, 6, 7, 9, 10,11,
+  41              12,14,15,17,18,20,21,23,25,27,
+  42              29,31,33,35,37,40,42,44,47,49,
+  43              52,54,57,59,62,65,67,70,73,76,
+  44              79,82,85,88,90,93,97,100,103,106,
+  45              109,112,115,118,121,124
+  46          
+  47          };
+  48          
+  49          typedef struct dds_block
+  50          {
+  51            int freq;
+C51 COMPILER V9.54   MAIN_002                                                              07/21/2021 18:53:17 PAGE 2   
+
+  52            unsigned long data_index;
+  53            int rom_len;
+  54            
+  55            unsigned char Rom_data;
+  56            unsigned int  Vout_zoom;
+  57            enum wave_type {sin = 1,sawtooth,triangle,rectangle} wave;
+  58            int Check;
+  59            
+  60          }dds_block;
+  61          
+  62          dds_block idata wave_dds = {100,0,512,0,50,sin,128};
+  63          
+  64          char idata LCD_disbuffer[2][16];
+  65          
+  66          void LCD_UpdatePara()
+  67          {
+  68   1        int freq_dis = wave_dds.freq;
+  69   1        int Vout_zoom_dis = wave_dds.Vout_zoom;
+  70   1        
+  71   1        if(wave_dds.wave == sin)
+  72   1        {
+  73   2          str_copy(&LCD_disbuffer[0][5],"sin");
+  74   2        }
+  75   1        if(wave_dds.wave == sawtooth)
+  76   1        {
+  77   2          str_copy(&LCD_disbuffer[0][5],"saw");
+  78   2        }
+  79   1        if(wave_dds.wave == triangle)
+  80   1        {
+  81   2          str_copy(&LCD_disbuffer[0][5],"tri");
+  82   2        }
+  83   1        if(wave_dds.wave == rectangle)
+  84   1        {
+  85   2          str_copy(&LCD_disbuffer[0][5],"rec");
+  86   2        }
+  87   1        
+  88   1        LCD_disbuffer[1][5] = freq_dis/100 + '0';
+  89   1        freq_dis = freq_dis%100;
+  90   1        LCD_disbuffer[1][6] = freq_dis/10 + '0';
+  91   1        freq_dis = freq_dis%10;
+  92   1        LCD_disbuffer[1][7] = freq_dis + '0';
+  93   1        
+  94   1        LCD_disbuffer[0][12] = Vout_zoom_dis/10 + '0';
+  95   1        Vout_zoom_dis = Vout_zoom_dis%10;
+  96   1        LCD_disbuffer[0][13] = '.';
+  97   1        LCD_disbuffer[0][14] = Vout_zoom_dis + '0';
+  98   1      
+  99   1      }
+ 100          
+ 101          void LCD_Update()
+ 102          {
+ 103   1        Timer0_interupt_disable();
+ 104   1        
+ 105   1        str_copy(LCD_disbuffer[0],"WAVE:    V:    v");
+ 106   1        str_copy(LCD_disbuffer[1],"FREQ:   HZ      ");
+ 107   1      
+ 108   1        LCD_UpdatePara();
+ 109   1        
+ 110   1        LCD_Puts(0,0,LCD_disbuffer[0]);
+ 111   1        LCD_Puts(0,1,LCD_disbuffer[1]);
+ 112   1        
+ 113   1        Timer0_interupt_enable();
+C51 COMPILER V9.54   MAIN_002                                                              07/21/2021 18:53:17 PAGE 3   
+
+ 114   1      }
+ 115          
+ 116          //设置最高电压 单位0.1V
+ 117          void SetWaveVoutZoom(unsigned int Vout)
+ 118          {
+ 119   1        unsigned int data_set = (Vout<<8)/5;
+ 120   1        
+ 121   1        data_set = (data_set + 5)/10;
+ 122   1        if(data_set > (WAVE_ROM_SIZE - 1))
+ 123   1        {
+ 124   2          data_set = (WAVE_ROM_SIZE-1);
+ 125   2        }
+ 126   1        Timer0_interupt_disable();
+ 127   1        pcf8591_set_dac_value(PCF8591_SLAVE_ADDRESS_1,(unsigned char)data_set);
+ 128   1        Timer0_interupt_enable();
+ 129   1      
+ 130   1      }
+ 131          
+ 132          void timer_key_update_handle()
+ 133          {
+ 134   1        char is_key_press = !KEY_IS_PRESSED ;
+ 135   1      
+ 136   1        if(BUTTON_LONG_PRESS == button_get_status(BUTTON_ESC,5))
+ 137   1        { 
+ 138   2          is_key_press = KEY_IS_PRESSED;
+ 139   2          wave_dds.wave++;
+ 140   2          if(wave_dds.wave > rectangle)
+ 141   2          {
+ 142   3            wave_dds.wave = sin;
+ 143   3          }
+ 144   2        }
+ 145   1        if(BUTTON_LONG_PRESS == button_get_status(BUTTON_UP,2))
+ 146   1        { 
+ 147   2          is_key_press = KEY_IS_PRESSED;
+ 148   2          wave_dds.freq++;
+ 149   2          if(wave_dds.freq > FREQ_MAX_SET)
+ 150   2          {
+ 151   3            wave_dds.freq = FREQ_MIN_SET;
+ 152   3          }
+ 153   2        }
+ 154   1        if(BUTTON_LONG_PRESS == button_get_status(BUTTON_DOWN,2))
+ 155   1        { 
+ 156   2          is_key_press = KEY_IS_PRESSED;
+ 157   2          wave_dds.freq--;
+ 158   2          if(wave_dds.freq < FREQ_MIN_SET)
+ 159   2          {
+ 160   3            wave_dds.freq = FREQ_MAX_SET;
+ 161   3          }
+ 162   2        }
+ 163   1        if(BUTTON_LONG_PRESS == button_get_status(BUTTON_ENTER,2))
+ 164   1        { 
+ 165   2          is_key_press = KEY_IS_PRESSED;
+ 166   2          wave_dds.Vout_zoom++;
+ 167   2          if(wave_dds.Vout_zoom > VOUT_MAX_SET)
+ 168   2          {
+ 169   3            wave_dds.Vout_zoom = 0;
+ 170   3          }
+ 171   2          SetWaveVoutZoom(wave_dds.Vout_zoom);
+ 172   2        }
+ 173   1        if(is_key_press == KEY_IS_PRESSED)
+ 174   1        { 
+ 175   2          LCD_Update();
+C51 COMPILER V9.54   MAIN_002                                                              07/21/2021 18:53:17 PAGE 4   
+
+ 176   2          is_key_press = !KEY_IS_PRESSED;
+ 177   2        }
+ 178   1        
+ 179   1      }
+ 180          
+ 181          soft_timer idata timer_key_update = {0,10,timer_key_update_handle};
+ 182          
+ 183          void Timer0_Handle()
+ 184          {    
+ 185   1        //static int rom_cnt = 0 ;
+ 186   1        wave_dds.data_index += wave_dds.freq;
+ 187   1        if(wave_dds.data_index >= wave_dds.rom_len)
+ 188   1        {
+ 189   2          wave_dds.data_index-= wave_dds.rom_len;
+ 190   2        }
+ 191   1        
+ 192   1        if(wave_dds.wave == sin)
+ 193   1        {
+ 194   2          wave_dds.Rom_data = Wave_ROM_Sine[wave_dds.data_index>>1];
+ 195   2        }
+ 196   1        if(wave_dds.wave == sawtooth)
+ 197   1        {
+ 198   2          wave_dds.Rom_data = wave_dds.data_index >> 1;
+ 199   2        }     
+ 200   1        if(wave_dds.wave == triangle)
+ 201   1        {
+ 202   2          if(wave_dds.data_index < (wave_dds.rom_len>>1))
+ 203   2          {
+ 204   3            wave_dds.Rom_data = wave_dds.data_index;
+ 205   3          }
+ 206   2          else
+ 207   2          {
+ 208   3            wave_dds.Rom_data =  (WAVE_ROM_SIZE-1) - (wave_dds.data_index - WAVE_ROM_SIZE);
+ 209   3          }
+ 210   2        }
+ 211   1        if(wave_dds.wave == rectangle)
+ 212   1        {
+ 213   2          if(wave_dds.data_index < (wave_dds.rom_len>>1))
+ 214   2          {
+ 215   3            wave_dds.Rom_data = 0;
+ 216   3          }
+ 217   2          else
+ 218   2          {
+ 219   3            wave_dds.Rom_data = (WAVE_ROM_SIZE-1);
+ 220   3          }
+ 221   2        } 
+ 222   1        /*pcf8591_set_dac_value(PCF8591_SLAVE_ADDRESS_0,Wave_ROM_Sine[rom_cnt++]);
+ 223   1        if(rom_cnt >= WAVE_ROM_SIZE)
+ 224   1        {
+ 225   1          rom_cnt = 0;
+ 226   1        }*/
+ 227   1        pcf8591_set_dac_value(PCF8591_SLAVE_ADDRESS_0,wave_dds.Rom_data);
+ 228   1        soft_timer_stepper(&timer_key_update);
+ 229   1      }
+ 230          sbit test = P1^7;
+ 231          void main()
+ 232          {
+ 233   1        test = 1;
+ 234   1        LCD_Init();
+ 235   1        Timer0_set_callback(Timer0_Handle);
+ 236   1        Timer0_Init();
+ 237   1        LCD_Update();
+C51 COMPILER V9.54   MAIN_002                                                              07/21/2021 18:53:17 PAGE 5   
+
+ 238   1        SetWaveVoutZoom(wave_dds.Vout_zoom);
+ 239   1        test = 0;
+ 240   1        while(1)
+ 241   1        {
+ 242   2          if(soft_timer_check(&timer_key_update) == 1)
+ 243   2          { 
+ 244   3            timer_key_update.fun();
+ 245   3          }
+ 246   2        }
+ 247   1      
+ 248   1      }
+ 249          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    822    ----
+   CONSTANT SIZE    =    306    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       7
+   IDATA SIZE       =     53    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,257 @@
+C51 COMPILER V9.54   IIC                                                                   05/10/2021 21:02:23 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE IIC
+OBJECT MODULE PLACED IN .\outHex\iic.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\IIC\iic.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\..\74HC573;..\..\BUTT
+                    -ON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\..\pcf8591;..\..\PWM;
+                    -..\..\software_timer;..\..\TIMER;..\..\UART;..\..\BUTTON_Matrix;..\..\AT24CXX) DEBUG OBJECTEXTEND PRINT(.\Listings\iic.l
+                    -st) TABS(2) OBJECT(.\outHex\iic.obj)
+
+line level    source
+
+   1          #include "iic.h"
+   2           
+   3          #include <intrins.h>
+   4          #define TIME_OUT  100
+   5           
+   6          void iic_delay_5us()
+   7          {
+   8   1        _nop_();
+   9   1        _nop_();
+  10   1        _nop_();
+  11   1        _nop_();
+  12   1        _nop_();
+  13   1         
+  14   1      }
+  15          
+  16          void iic_delay_us(unsigned int us)
+  17          {   unsigned int i = us/20;
+  18   1          while(i--);
+  19   1      }
+  20          
+  21          void iic_start()
+  22          {
+  23   1        
+  24   1        SCL = 1;
+  25   1        SDA = 1;
+  26   1        iic_delay_5us( );
+  27   1        SDA = 0;
+  28   1        iic_delay_5us( );
+  29   1        SCL = 0;
+  30   1        SDA = 1;
+  31   1      }
+  32          
+  33          void iic_stop()
+  34          {
+  35   1        SCL = 0;
+  36   1        SDA = 0;
+  37   1        SCL = 1;
+  38   1        iic_delay_5us( );
+  39   1        SDA = 1;
+  40   1        iic_delay_5us( );
+  41   1        SDA = 0;
+  42   1        SDA = 1;
+  43   1      }
+  44          
+  45          void iic_sendbit(char bit_data)
+  46          {
+  47   1        SCL = 0;
+  48   1        SDA = bit_data;
+  49   1        iic_delay_5us( );
+  50   1        SCL = 1;
+  51   1        iic_delay_5us( );
+  52   1        SCL = 0;
+C51 COMPILER V9.54   IIC                                                                   05/10/2021 21:02:23 PAGE 2   
+
+  53   1        SDA = 1;
+  54   1      }
+  55          
+  56          bit iic_readbit()
+  57          {
+  58   1        bit ret = 0;
+  59   1        SCL = 0;
+  60   1        SDA = 1;
+  61   1        iic_delay_5us( );
+  62   1        SCL = 1;
+  63   1        iic_delay_5us( );
+  64   1        ret = SDA;
+  65   1        SCL = 0;
+  66   1        SDA = 1;
+  67   1        return ret;
+  68   1      }
+  69          
+  70          void iic_write_byte(unsigned char writedata)
+  71          { 
+  72   1        int i;
+  73   1       
+  74   1        for(i=0;i<8;i++)
+  75   1        {
+  76   2          if((writedata&0x80)!=0)
+  77   2          {
+  78   3            iic_sendbit(1);
+  79   3          }
+  80   2          else
+  81   2          {
+  82   3            iic_sendbit(0);
+  83   3          }
+  84   2          writedata<<=1;
+  85   2        }
+  86   1        
+  87   1      }
+  88          
+  89          char iic_read_byte( )
+  90          { 
+  91   1        int i;
+  92   1        char readdata = 0;
+  93   1        char readdata_bit = 0;
+  94   1        for(i=7;i>=0;i--)
+  95   1        {
+  96   2          readdata_bit = iic_readbit();
+  97   2          readdata|= (readdata_bit << i);
+  98   2        }
+  99   1        return readdata;
+ 100   1      }
+ 101          
+ 102          char iic_waitack()
+ 103          {
+ 104   1       
+ 105   1        int timeout = 0;
+ 106   1        while(1 ==iic_readbit())
+ 107   1        {
+ 108   2          timeout++;
+ 109   2          if(timeout >  TIME_OUT)
+ 110   2          {
+ 111   3             
+ 112   3            return 0;
+ 113   3          }
+ 114   2        }
+C51 COMPILER V9.54   IIC                                                                   05/10/2021 21:02:23 PAGE 3   
+
+ 115   1       
+ 116   1        return 1;
+ 117   1      }
+ 118          
+ 119          int iic_read_data(char iic_address,char *buffer,int length)
+ 120          {
+ 121   1        int i=0;
+ 122   1        iic_start();
+ 123   1        iic_address<<=1;
+ 124   1        iic_address|=0x01;
+ 125   1        iic_write_byte(iic_address);
+ 126   1        if(0 == iic_waitack())
+ 127   1        {
+ 128   2          return 0;
+ 129   2        }
+ 130   1       
+ 131   1        
+ 132   1        for(i=0;i<length;i++)
+ 133   1        {
+ 134   2          buffer[i] = iic_read_byte();
+ 135   2          if(i < length - 1)
+ 136   2          {
+ 137   3            iic_sendbit(0);
+ 138   3          }
+ 139   2          else
+ 140   2          {
+ 141   3            iic_sendbit(1);
+ 142   3          }
+ 143   2        
+ 144   2        }
+ 145   1       
+ 146   1        iic_stop();
+ 147   1       
+ 148   1        return 1;
+ 149   1      }
+ 150          
+ 151          int iic_random_read_data(char iic_address,char data_address,char *buffer,int length)
+ 152          {
+ 153   1        int i=0;
+ 154   1        char iic_address_merge_rw;
+ 155   1        iic_start();
+ 156   1        iic_address_merge_rw = iic_address<<1;
+ 157   1        iic_address_merge_rw &= ~0x01;
+ 158   1        iic_write_byte(iic_address_merge_rw);
+ 159   1        if(0 == iic_waitack())
+ 160   1        {
+ 161   2          return 0;
+ 162   2        }
+ 163   1        
+ 164   1        iic_write_byte(data_address);
+ 165   1        if(0 == iic_waitack())
+ 166   1        {
+ 167   2          return 0;
+ 168   2        }
+ 169   1       
+ 170   1        iic_start();
+ 171   1        iic_address_merge_rw = iic_address<<1;
+ 172   1        iic_address_merge_rw |= 0x01;
+ 173   1        iic_write_byte(iic_address_merge_rw);
+ 174   1        if(0 == iic_waitack())
+ 175   1        {
+ 176   2          return 0;
+C51 COMPILER V9.54   IIC                                                                   05/10/2021 21:02:23 PAGE 4   
+
+ 177   2        }
+ 178   1        
+ 179   1        for(i=0;i<length;i++)
+ 180   1        {
+ 181   2          buffer[i] = iic_read_byte();
+ 182   2          if(i < length - 1)
+ 183   2          {
+ 184   3            iic_sendbit(0);
+ 185   3          }
+ 186   2          else
+ 187   2          {
+ 188   3            iic_sendbit(1);
+ 189   3          }
+ 190   2        
+ 191   2        }
+ 192   1       
+ 193   1        iic_stop(); 
+ 194   1        
+ 195   1        return 1;
+ 196   1      }
+ 197          
+ 198          int iic_write_data(char iic_address,char *buffer,int length)
+ 199          {
+ 200   1        int i=0;
+ 201   1        
+ 202   1        iic_start();
+ 203   1        iic_address<<=1;
+ 204   1        iic_address&=~(0x01);
+ 205   1        iic_write_byte(iic_address);
+ 206   1       
+ 207   1        if(0 ==iic_waitack())
+ 208   1        {
+ 209   2          return 0;
+ 210   2        }
+ 211   1         
+ 212   1       
+ 213   1        for(i=0;i<length;i++)
+ 214   1        {
+ 215   2          iic_write_byte(buffer[i]);
+ 216   2          if(0 ==iic_waitack())
+ 217   2          {
+ 218   3            return 0;
+ 219   3          }
+ 220   2        }
+ 221   1        
+ 222   1        iic_stop();
+ 223   1        
+ 224   1        return 1;
+ 225   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    600    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      25
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,128 @@
+C51 COMPILER V9.54   RTOS_THREAD                                                           05/29/2021 17:34:02 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE RTOS_THREAD
+OBJECT MODULE PLACED IN .\outHex\RTOS_Thread.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\RTOS_Thread.c OPTIMIZE(0,SPEED) BROWSE NOAREGS INCDIR(..\..\74HC573;.
+                    -.\..\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\..\pcf8591;.
+                    -.\..\PWM;..\..\software_timer;..\..\TIMER;..\..\UART;..\..\BUTTON_Matrix;..\..\AT24CXX) DEBUG OBJECTEXTEND PRINT(.\Listi
+                    -ngs\RTOS_Thread.lst) TABS(2) OBJECT(.\outHex\RTOS_Thread.obj)
+
+line level    source
+
+   1          #include "RTOS_Thread.h"
+   2          #include <reg52.h>
+   3          
+   4          thread_manage_list idata  g_thread_manage_list = {{0},0,0,0};
+   5          
+   6          void thread_create(thread_block* block,thread_pfun pfun,char* sp_init)
+   7          {
+   8   1        block->PC_L =  (unsigned int)pfun%256 ;
+   9   1        block->PC_H =  (unsigned int)pfun/256 ;
+  10   1        block->sp = sp_init;
+*** WARNING C260 IN LINE 10 OF ..\RTOS_Thread.c: '=': pointer truncation
+  11   1        block->status = normal;
+  12   1        g_thread_manage_list.list[g_thread_manage_list.list_len] = block;
+  13   1        g_thread_manage_list.list_len++;
+  14   1      }
+  15          
+  16          void thread_suspend(thread_block* block)
+  17          {
+  18   1        block->status = suspend;
+  19   1      }
+  20          
+  21          void thread_normal(thread_block* block)
+  22          {
+  23   1        block->status = normal;
+  24   1      }
+  25          
+  26          thread_block* thread_schedule(void)
+  27          {
+  28   1        static char next_thread = 0;
+  29   1      
+  30   1        do
+  31   1        {
+  32   2          next_thread++;
+  33   2          if(next_thread >= g_thread_manage_list.list_len)
+  34   2          {
+  35   3            next_thread = 0;
+  36   3          }
+  37   2        }
+  38   1        while(g_thread_manage_list.list[next_thread]->status != normal);
+  39   1        
+  40   1        return g_thread_manage_list.list[next_thread];
+  41   1      }
+  42          
+  43          void thread_start(void)
+  44          {
+  45   1        g_thread_manage_list.thread_cur = 0;
+  46   1        g_thread_manage_list.thread_next = thread_schedule();
+  47   1      }
+  48          
+  49          char thread_change(void)
+  50          {
+  51   1        char *my_sp =(char *)SP;
+C51 COMPILER V9.54   RTOS_THREAD                                                           05/29/2021 17:34:02 PAGE 2   
+
+  52   1        thread_block* p_th_block = 0;
+  53   1        my_sp-=THREAD_CHANGE_PUSH_BYTES; 
+  54   1        
+  55   1        p_th_block = g_thread_manage_list.thread_cur;
+  56   1        if(p_th_block != 0)
+  57   1        {
+  58   2          p_th_block->sp  = (char)(my_sp - THREAD_CONTEXT_SIZE);
+  59   2          p_th_block->R7  = *(my_sp);
+  60   2          p_th_block->R6  = *(my_sp-1);
+  61   2          p_th_block->R5  = *(my_sp-2);
+  62   2          p_th_block->R4  = *(my_sp-3);
+  63   2          p_th_block->R3  = *(my_sp-4);
+  64   2          p_th_block->R2  = *(my_sp-5);
+  65   2          p_th_block->R1  = *(my_sp-6);
+  66   2          p_th_block->R0  = *(my_sp-7);
+  67   2          p_th_block->PSW = *(my_sp-8);
+  68   2          p_th_block->DPL = *(my_sp-9);
+  69   2          p_th_block->DPH = *(my_sp-10);
+  70   2          p_th_block->B   = *(my_sp-11);
+  71   2          p_th_block->ACC = *(my_sp-12);
+  72   2          p_th_block->PC_H= *(my_sp-13);
+  73   2          p_th_block->PC_L= *(my_sp-14); 
+  74   2        }
+  75   1       
+  76   1        p_th_block = g_thread_manage_list.thread_next;
+  77   1        
+  78   1        my_sp      = (char *)(p_th_block->sp + THREAD_CONTEXT_SIZE);
+  79   1        *(my_sp)   = p_th_block->R7 ;
+  80   1        *(my_sp-1) = p_th_block->R6 ;
+  81   1        *(my_sp-2) = p_th_block->R5 ;
+  82   1        *(my_sp-3) = p_th_block->R4 ;
+  83   1        *(my_sp-4) = p_th_block->R3 ;
+  84   1        *(my_sp-5) = p_th_block->R2 ;
+  85   1        *(my_sp-6) = p_th_block->R1 ;
+  86   1        *(my_sp-7) = p_th_block->R0 ;
+  87   1        *(my_sp-8) = p_th_block->PSW ;
+  88   1        *(my_sp-9) = p_th_block->DPL ;
+  89   1        *(my_sp-10)= p_th_block->DPH ;
+  90   1        *(my_sp-11)= p_th_block->B ;
+  91   1        *(my_sp-12)= p_th_block->ACC ;
+  92   1        *(my_sp-13)= p_th_block->PC_H;
+  93   1        *(my_sp-14)= p_th_block->PC_L;
+  94   1            
+  95   1        g_thread_manage_list.thread_cur = g_thread_manage_list.thread_next;
+  96   1        g_thread_manage_list.thread_next = thread_schedule();
+  97   1        
+  98   1        return (char)my_sp;
+  99   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1449    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     22    ----
+   IDATA SIZE       =     23    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)

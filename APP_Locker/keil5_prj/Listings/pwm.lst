@@ -1,0 +1,51 @@
+C51 COMPILER V9.54   PWM                                                                   05/10/2021 21:02:23 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE PWM
+OBJECT MODULE PLACED IN .\outHex\pwm.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\PWM\pwm.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\..\74HC573;..\..\BUTT
+                    -ON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\..\pcf8591;..\..\PWM;
+                    -..\..\software_timer;..\..\TIMER;..\..\UART;..\..\BUTTON_Matrix;..\..\AT24CXX) DEBUG OBJECTEXTEND PRINT(.\Listings\pwm.l
+                    -st) TABS(2) OBJECT(.\outHex\pwm.obj)
+
+line level    source
+
+   1          #include "pwm.h"
+   2          
+   3          
+   4          int pwm_is_high(pwm* my_pwm)
+   5          {
+   6   1          if(my_pwm->pwm_counter >=  (my_pwm->pwm_high_percentage * my_pwm->pwm_period / 100))
+   7   1          {
+   8   2             
+   9   2              return 0;
+  10   2          }
+  11   1          else
+  12   1          {
+  13   2              return 1;
+  14   2          }
+  15   1      }
+  16          
+  17          void pwm_stepper(pwm* my_pwm)
+  18          {
+  19   1          my_pwm->pwm_counter++;
+  20   1          if(my_pwm->pwm_counter >= my_pwm->pwm_period)
+  21   1          {
+  22   2              my_pwm->pwm_counter = 0;
+  23   2          }
+  24   1      
+  25   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    107    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       3
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

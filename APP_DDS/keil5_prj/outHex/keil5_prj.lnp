@@ -1,0 +1,11 @@
+".\outHex\main_002.obj",
+".\outHex\pcf8591.obj",
+".\outHex\timer.obj",
+".\outHex\software_timer.obj",
+".\outHex\LCD1602.obj",
+".\outHex\mystring.obj",
+".\outHex\iic.obj",
+".\outHex\button.obj" 
+TO ".\outHex\keil5_prj" 
+PRINT(".\Listings\keil5_prj.m51") RAMSIZE(256) 
+CODE( 0X0000-0X1FFF )

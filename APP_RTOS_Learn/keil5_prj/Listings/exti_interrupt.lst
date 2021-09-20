@@ -1,0 +1,78 @@
+C51 COMPILER V9.54   EXTI_INTERRUPT                                                        07/23/2021 08:17:49 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE EXTI_INTERRUPT
+OBJECT MODULE PLACED IN .\outHex\exti_interrupt.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\exti_interrupt\exti_interrupt.c ROM(COMPACT) OPTIMIZE(8,SPEED) BRO
+                    -WSE NOAREGS INCDIR(..\..\74HC573;..\..\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_enc
+                    -ode;..\..\mystring;..\..\pcf8591;..\..\PWM;..\..\software_timer;..\..\TIMER;..\..\UART;..\..\BUTTON_Matrix;..\..\AT24CXX
+                    -;..\..\Thread) DEBUG OBJECTEXTEND PRINT(.\Listings\exti_interrupt.lst) TABS(2) OBJECT(.\outHex\exti_interrupt.obj)
+
+line level    source
+
+   1          #include "exti_interrupt.h"
+   2          
+   3          typedef void(*exti_callback)(void);
+   4          exti_callback p_exti0_callback = 0;
+   5          exti_callback p_exti1_callback = 0;
+   6          
+   7          
+   8          void exti_interrupt_init()
+   9          {
+  10   1        EA = 1;
+  11   1        EX0 = 1;
+  12   1        IT0 = 1;
+  13   1        
+  14   1        IT1 = 1;
+  15   1        EX1 = 1;
+  16   1      }
+  17          
+  18          
+  19          void exti0_interrupt_set_callback(void* pfun)
+  20          {
+  21   1        IE0 = 0;
+  22   1        p_exti0_callback = (exti_callback)pfun;
+  23   1      }
+  24          
+  25          void exti1_interrupt_set_callback(void* pfun)
+  26          {
+  27   1        IE0 = 0;
+  28   1        p_exti1_callback = (exti_callback)pfun;
+  29   1      }
+  30          
+  31          
+  32          void exti_interrupt_ex0(void) interrupt 0
+  33          { 
+  34   1        //EA = 0;
+  35   1          if(p_exti0_callback!=0)
+  36   1          {
+  37   2            p_exti0_callback();
+  38   2          }
+  39   1        //EA = 1;
+  40   1      }
+  41          
+  42          void exti_interrupt_ex1(void) interrupt 2
+  43          { 
+  44   1        //EA = 0;
+  45   1          if(p_exti1_callback!=0)
+  46   1          {
+  47   2            p_exti1_callback();
+  48   2          }
+  49   1        //EA = 1;
+  50   1      }
+
+
+C51 COMPILER V9.54   EXTI_INTERRUPT                                                        07/23/2021 08:17:49 PAGE 2   
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    201    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      6    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

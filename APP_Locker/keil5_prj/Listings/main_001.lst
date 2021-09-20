@@ -1,0 +1,321 @@
+C51 COMPILER V9.54   MAIN_001                                                              05/07/2021 22:44:07 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MAIN_001
+OBJECT MODULE PLACED IN .\outHex\main_001.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\main_001.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\..\74HC573;..\..\BUTTON
+                    -;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\..\pcf8591;..\..\PWM;..
+                    -\..\software_timer;..\..\TIMER;..\..\UART) DEBUG OBJECTEXTEND PRINT(.\Listings\main_001.lst) TABS(2) OBJECT(.\outHex\mai
+                    -n_001.obj)
+
+line level    source
+
+   1          #include "LCD1602.h"
+   2          #include "UART.h"
+   3          #include "button.h"
+   4          #include "motor_encode.h"
+   5          #include "timer.h"
+   6          #include "pwm.h"
+   7          #include "software_timer.h"
+   8          #include "mystring.h"
+   9          #include "exti_interrupt.h"
+  10          #include "iic.h"
+  11          #include "pcf8591.h"
+  12          #include "ds18b20.h"
+  13           
+  14          #define MOTOR_STOP  0
+  15          #define MOTOR_RUN   1
+  16          #define MOTOR_FORCE_STOP 2
+  17          
+  18          sbit alarm = P1^4;
+  19          sbit test = P1^7;
+  20          pwm   motor_pwm = {50,10,0};
+  21          static int idata second_counter_data = 0;
+  22          unsigned int idata press_01=0,press_02 = 0;
+  23          int motor_force_stop_flag = MOTOR_RUN; 
+  24          int motor_run_flag = MOTOR_RUN;
+  25          unsigned int ds18b20_tempature = 0;
+  26          
+  27           
+  28          enum lcd_pages{start_enum=0,show_motor_speed,show_time,show_press,show_tem,end_enum};
+  29          enum lcd_pages lcd_pages_info_display = show_motor_speed;
+  30          
+  31          char idata lcd_display[2][20];
+  32          void lcd_info_update(void *arg)
+  33          {
+  34   1        int temp = 0;
+  35   1        Uart_puts("lcd_info_update\n");
+  36   1        str_copy(lcd_display[0],"                ");
+  37   1        str_copy(lcd_display[1],"                ");
+  38   1        if(lcd_pages_info_display == show_motor_speed)
+  39   1        {
+  40   2          str_copy(lcd_display[0],"motor speed:");
+  41   2          str_copy(lcd_display[1],"speed=   %");
+  42   2          str_itoa(&lcd_display[1][6],motor_pwm.pwm_high_percentage);
+  43   2          
+  44   2        }
+  45   1        else if(lcd_pages_info_display == show_time)
+  46   1        {
+  47   2          
+  48   2          str_copy(lcd_display[0],"run time(s):");
+  49   2          str_itoa(&lcd_display[1][0],second_counter_data);
+  50   2          lcd_display[1][15] = 's';
+  51   2          
+  52   2        }
+C51 COMPILER V9.54   MAIN_001                                                              05/07/2021 22:44:07 PAGE 2   
+
+  53   1        else if(lcd_pages_info_display == show_press)
+  54   1        {
+  55   2      
+  56   2          str_copy(lcd_display[0],"press 1: ");
+  57   2          str_copy(lcd_display[1],"press 2: ");
+  58   2          str_itoa(&lcd_display[0][10],press_01);
+  59   2          str_itoa(&lcd_display[1][10],press_02);
+  60   2      
+  61   2        }
+  62   1        else if(lcd_pages_info_display == show_tem)
+  63   1        {
+  64   2          unsigned int tem = 0;
+  65   2          tem = ds18b20_tempature; 
+  66   2          tem = tem/10;
+  67   2          str_copy(lcd_display[0],"temperature:  ");
+  68   2          str_itoa(&lcd_display[1][0],tem);
+  69   2          lcd_display[1][4] = 0xDF;
+  70   2          lcd_display[1][5] = 'C';
+  71   2       
+  72   2        }
+  73   1        
+  74   1        
+  75   1        LCD_Puts(0,0,lcd_display[0]);
+  76   1        LCD_Puts(0,1,lcd_display[1]);
+  77   1         
+  78   1      
+  79   1      }
+*** WARNING C280 IN LINE 32 OF ..\main_001.c: 'arg': unreferenced local variable
+  80          soft_timer timer_lcd = {0,50,lcd_info_update};
+  81          
+  82          
+  83          #define BUTTON_PRESS_TIME  10
+  84          void button_event_deal(void *arg)
+  85          {
+  86   1        Uart_puts("button_event_deal\n");
+  87   1       
+  88   1        //在设置速度的页面...
+  89   1        if(lcd_pages_info_display == show_motor_speed)
+  90   1        {
+  91   2          if(BUTTON_LONG_PRESS ==button_get_status(BUTTON_UP,BUTTON_PRESS_TIME))
+  92   2          {
+  93   3            if(motor_pwm.pwm_high_percentage<100)
+  94   3            {
+  95   4              motor_pwm.pwm_high_percentage++;
+  96   4            }
+  97   3            
+  98   3          }
+  99   2          
+ 100   2          if(BUTTON_LONG_PRESS ==button_get_status(BUTTON_DOWN,BUTTON_PRESS_TIME))
+ 101   2          {
+ 102   3            if(motor_pwm.pwm_high_percentage>0)
+ 103   3            {
+ 104   4              motor_pwm.pwm_high_percentage--;
+ 105   4            }
+ 106   3            
+ 107   3          }
+ 108   2        }
+ 109   1        
+ 110   1        //在设置搅拌时间的页面...
+ 111   1        if(lcd_pages_info_display == show_time)
+ 112   1        {
+ 113   2          if(BUTTON_LONG_PRESS ==button_get_status(BUTTON_UP,BUTTON_PRESS_TIME))
+C51 COMPILER V9.54   MAIN_001                                                              05/07/2021 22:44:07 PAGE 3   
+
+ 114   2          {
+ 115   3             second_counter_data+=10;
+ 116   3            
+ 117   3          }
+ 118   2          
+ 119   2          if(BUTTON_LONG_PRESS ==button_get_status(BUTTON_DOWN,BUTTON_PRESS_TIME))
+ 120   2          {
+ 121   3             
+ 122   3            if(second_counter_data>0)
+ 123   3            {
+ 124   4              second_counter_data--;
+ 125   4            }
+ 126   3          }
+ 127   2        }
+ 128   1        
+ 129   1        //所有页面...
+ 130   1        if(BUTTON_LONG_PRESS ==button_get_status(BUTTON_ENTER,BUTTON_PRESS_TIME))
+ 131   1        {    
+ 132   2            lcd_pages_info_display++;
+ 133   2            if(lcd_pages_info_display >= end_enum)
+ 134   2            {
+ 135   3              lcd_pages_info_display = start_enum + 1;
+ 136   3            }
+ 137   2       
+ 138   2            motor_force_stop_flag = MOTOR_RUN; 
+ 139   2           
+ 140   2        }
+ 141   1        
+ 142   1        if(BUTTON_LONG_PRESS  ==button_get_status(BUTTON_ESC,BUTTON_PRESS_TIME))
+ 143   1        {
+ 144   2            motor_encode_faster_stop();
+ 145   2            motor_force_stop_flag = MOTOR_FORCE_STOP;
+ 146   2         
+ 147   2        }
+ 148   1      }
+*** WARNING C280 IN LINE 84 OF ..\main_001.c: 'arg': unreferenced local variable
+ 149          soft_timer timer_button = {0,1,button_event_deal};
+ 150           
+ 151          void second_counter(void *arg)
+ 152          {
+ 153   1        Uart_puts("second_counter\n");
+ 154   1        second_counter_data++;
+ 155   1       
+ 156   1        
+ 157   1      }
+*** WARNING C280 IN LINE 151 OF ..\main_001.c: 'arg': unreferenced local variable
+ 158          soft_timer timer_minute_counter = {0,100,second_counter};
+ 159          
+ 160          void get_ds18b20_tempature(void *arg)
+ 161          {
+ 162   1        Uart_puts("get_ds18b20_tempature\n");
+ 163   1        ds18b20_tempature = ds18b20_get_temp();
+ 164   1        ds18b20_start_get_temp();
+ 165   1        
+ 166   1      }
+*** WARNING C280 IN LINE 160 OF ..\main_001.c: 'arg': unreferenced local variable
+ 167          soft_timer timer_get_ds18b20_tempature = {0,300,get_ds18b20_tempature};
+ 168          /*
+ 169          电机管理策略:
+ 170          press_01:搅拌罐压力
+ 171          press_02:传送带压力
+ 172          
+C51 COMPILER V9.54   MAIN_001                                                              05/07/2021 22:44:07 PAGE 4   
+
+ 173          搅拌罐压力代表投入物料，传送带压力代表物料破碎成功。
+ 174          
+ 175          开启电机的时机:
+ 176          搅拌罐压力增大，代表有物料投放。
+ 177          关闭电机的时机：
+ 178          搅拌罐没有压力变化；
+ 179          或者传送带长时间没有产生压力变化,代表一直没有磨碎的物料流出，这代表搅拌罐堵死了。
+ 180          
+ 181          */
+ 182          void motor_manage(void *arg)
+ 183          {
+ 184   1        Uart_puts("motor_manage\n");
+ 185   1        press_01 =  pcf8591_get_adc_value(PCF8591_SLAVE_ADDRESS_0,0);
+ 186   1        press_01 =  pcf8591_get_adc_value(PCF8591_SLAVE_ADDRESS_0,1);
+ 187   1        press_02 =  pcf8591_get_adc_value(PCF8591_SLAVE_ADDRESS_0,0);
+ 188   1        
+ 189   1        
+ 190   1        
+ 191   1        if( press_01 >= 100)
+ 192   1        {
+ 193   2          motor_run_flag = MOTOR_RUN;
+ 194   2          
+ 195   2        }
+ 196   1        else
+ 197   1        {
+ 198   2          motor_run_flag = MOTOR_STOP;
+ 199   2        }
+ 200   1       
+ 201   1      }
+*** WARNING C280 IN LINE 182 OF ..\main_001.c: 'arg': unreferenced local variable
+ 202          soft_timer timer_motor_manage = {0,20,motor_manage};
+ 203          
+ 204          void timer_Handler()
+ 205          { 
+ 206   1        int pwm_status = 0;
+ 207   1         
+ 208   1        
+ 209   1        pwm_stepper(&motor_pwm);
+ 210   1        pwm_status = pwm_is_high(&motor_pwm);
+ 211   1      
+ 212   1        if(motor_force_stop_flag == MOTOR_FORCE_STOP)
+ 213   1        {
+ 214   2            motor_encode_faster_stop();
+ 215   2           alarm = 0;
+ 216   2        }
+ 217   1        else
+ 218   1        {
+ 219   2          if(motor_run_flag == MOTOR_RUN)
+ 220   2          {
+ 221   3            if(pwm_status == 0)
+ 222   3            {
+ 223   4              motor_encode_free_stop();
+ 224   4            }
+ 225   3            else
+ 226   3            {
+ 227   4              motor_encode_clockwise();
+ 228   4            }
+ 229   3            alarm = 1;
+ 230   3          }
+ 231   2          else
+ 232   2          {
+ 233   3             motor_encode_faster_stop();
+C51 COMPILER V9.54   MAIN_001                                                              05/07/2021 22:44:07 PAGE 5   
+
+ 234   3             alarm = 0;
+ 235   3          }
+ 236   2        
+ 237   2        }
+ 238   1        
+ 239   1        
+ 240   1      
+ 241   1        soft_timer_stepper(&timer_lcd);
+ 242   1        soft_timer_stepper(&timer_button);
+ 243   1        soft_timer_stepper(&timer_minute_counter);
+ 244   1        soft_timer_stepper(&timer_motor_manage );
+ 245   1        soft_timer_stepper(&timer_get_ds18b20_tempature );
+ 246   1      }
+ 247          
+ 248          void exti0_Handler()
+ 249          {
+ 250   1        
+ 251   1        //printf("exti0_Handler\n");
+ 252   1      }
+ 253          
+ 254           
+ 255          void main()
+ 256          { 
+ 257   1        Uart_init();
+ 258   1        LCD_Init();
+ 259   1        exti_interrupt_set_callback(exti0_Handler);
+ 260   1        exti_interrupt_init();
+ 261   1        Timer0_set_callback(timer_Handler);
+ 262   1        Timer0_Init();
+ 263   1        motor_encode_enable();
+ 264   1        motor_encode_faster_stop();
+ 265   1        
+ 266   1         
+ 267   1        while(1)
+ 268   1        {   
+ 269   2           
+ 270   2          soft_timer_check(&timer_lcd,0);
+ 271   2          soft_timer_check(&timer_button,0);
+ 272   2          soft_timer_check(&timer_minute_counter,0);
+ 273   2          soft_timer_check(&timer_motor_manage,0);
+ 274   2          soft_timer_check(&timer_get_ds18b20_tempature,0);
+ 275   2       
+ 276   2          Uart_puts("while 1 loop\n"); 
+ 277   2        }
+ 278   1        
+ 279   1         
+ 280   1         
+ 281   1       
+ 282   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    933    ----
+   CONSTANT SIZE    =    192    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     48      21
+   IDATA SIZE       =     46    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  5 WARNING(S),  0 ERROR(S)

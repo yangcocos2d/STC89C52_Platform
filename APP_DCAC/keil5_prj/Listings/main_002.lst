@@ -1,0 +1,304 @@
+C51 COMPILER V9.54   MAIN_002                                                              05/06/2021 19:17:10 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MAIN_002
+OBJECT MODULE PLACED IN .\outHex\main_002.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\APP_PowerChangeBackup\main_002.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\L
+                    -CD1602;..\UART;..\BUTTON;..\motor_encode;..\TIMER;..\PWM;..\software_timer;..\mystring;..\DS18B20;..\exti_interrupt;..\I
+                    -IC;..\pcf8591;..\74HC573) DEBUG OBJECTEXTEND PRINT(.\Listings\main_002.lst) TABS(2) OBJECT(.\outHex\main_002.obj)
+
+line level    source
+
+   1          
+   2          #include <reg52.h>
+   3          #include "pcf8591.h"
+   4          #include "74hc573.h"
+   5          #include "timer.h"
+   6          #include "software_timer.h"
+   7          #include "lcd1602.h"
+   8          #include "mystring.h"
+   9          #include "button.h"
+  10          #include "UART.h"
+  11          
+  12          sbit test = P1^7;
+  13          sbit alarm = P1^4;
+  14          
+  15          /*
+  16          电源的开关控制
+  17          
+  18          
+  19          */
+  20          enum power_status{power_normal,power_over,power_low};
+  21          
+  22          typedef struct Power_data
+  23          {
+  24            unsigned char power_voltage_low_limit;
+  25            unsigned char power_voltage_high_limit;
+  26            
+  27            unsigned char power_main_a_voltage;
+  28            unsigned char power_main_b_voltage;
+  29            unsigned char power_main_c_voltage;
+  30            
+  31            unsigned char power_standby_a_voltage;
+  32            unsigned char power_standby_b_voltage;
+  33            unsigned char power_standby_c_voltage;
+  34          
+  35            enum power_status power_main_status;
+  36            enum power_status power_standby_status;
+  37            
+  38          }Power_data;
+  39          
+  40          #define POWER_MAIN      0
+  41          #define POWER_STANDBY   1
+  42          //3V=>153
+  43          Power_data cur_power_data = {110,204,0,0,0,0,0,0,power_normal,power_normal};
+  44          
+  45          
+  46          void power_open(int power_no)
+  47          {
+  48   1        locker_resetbit(LOCKER_1,power_no);
+  49   1      }
+  50          void power_close(int power_no)
+  51          {
+  52   1        locker_setbit(LOCKER_1,power_no);
+  53   1      }
+C51 COMPILER V9.54   MAIN_002                                                              05/06/2021 19:17:10 PAGE 2   
+
+  54          void power_led(int power_no,enum power_status status)
+  55          {
+  56   1          locker_setbit(LOCKER_0,0 + power_no*3);
+  57   1          locker_setbit(LOCKER_0,1 + power_no*3);
+  58   1          locker_setbit(LOCKER_0,2 + power_no*3);
+  59   1        
+  60   1          if( status == power_normal)
+  61   1          {
+  62   2            locker_resetbit(LOCKER_0,0 + power_no*3);
+  63   2          }
+  64   1          if( status == power_over)
+  65   1          {
+  66   2            locker_resetbit(LOCKER_0,1 + power_no*3);
+  67   2          }
+  68   1          if( status == power_low)
+  69   1          {
+  70   2            locker_resetbit(LOCKER_0,2 + power_no*3);
+  71   2          }
+  72   1      }
+  73          
+  74          void power_data_get(Power_data* cur_power_data)
+  75          {
+  76   1        cur_power_data->power_main_a_voltage = pcf8591_get_adc_value(PCF8591_SLAVE_ADDRESS_0,0);
+  77   1        cur_power_data->power_main_a_voltage = pcf8591_get_adc_value(PCF8591_SLAVE_ADDRESS_0,1);
+  78   1        cur_power_data->power_main_b_voltage = pcf8591_get_adc_value(PCF8591_SLAVE_ADDRESS_0,2);
+  79   1        cur_power_data->power_main_c_voltage = pcf8591_get_adc_value(PCF8591_SLAVE_ADDRESS_0,0);
+  80   1      
+  81   1        cur_power_data->power_standby_a_voltage = pcf8591_get_adc_value(PCF8591_SLAVE_ADDRESS_1,0);
+  82   1        cur_power_data->power_standby_a_voltage = pcf8591_get_adc_value(PCF8591_SLAVE_ADDRESS_1,1);
+  83   1        cur_power_data->power_standby_b_voltage = pcf8591_get_adc_value(PCF8591_SLAVE_ADDRESS_1,2);
+  84   1        cur_power_data->power_standby_c_voltage = pcf8591_get_adc_value(PCF8591_SLAVE_ADDRESS_1,0);
+  85   1      }
+  86          
+  87          /*
+  88          LCD页面
+  89          
+  90          
+  91          */ 
+  92          enum lcd_page
+  93          {
+  94           
+  95          lcd_page_start = 0,
+  96          lcd_page_show_power_main_A,
+  97          lcd_page_show_power_main_B,
+  98          lcd_page_show_power_main_C,
+  99          
+ 100          lcd_page_show_power_standby_A,
+ 101          lcd_page_show_power_standby_B,
+ 102          lcd_page_show_power_standby_C,
+ 103          lcd_page_end
+ 104          };
+ 105          
+ 106          enum lcd_page lcd_page_no = lcd_page_show_power_main_A;
+ 107          char idata lcd_buffer[2][18];
+ 108          void lcd_update(void *arg)
+ 109          {
+ 110   1          str_copy(lcd_buffer[0],"                ");
+ 111   1          str_copy(lcd_buffer[1],"                ");
+ 112   1          
+ 113   1        
+ 114   1           
+ 115   1          if(lcd_page_no == lcd_page_show_power_main_A)
+C51 COMPILER V9.54   MAIN_002                                                              05/06/2021 19:17:10 PAGE 3   
+
+ 116   1          {
+ 117   2            str_copy(lcd_buffer[0],"power-main A:");
+ 118   2            str_itoa(lcd_buffer[1],cur_power_data.power_main_a_voltage);
+ 119   2       
+ 120   2          }
+ 121   1          else if(lcd_page_no == lcd_page_show_power_main_B)
+ 122   1          {
+ 123   2            str_copy(lcd_buffer[0],"power-main B:");
+ 124   2            str_itoa(lcd_buffer[1],cur_power_data.power_main_b_voltage);
+ 125   2       
+ 126   2          }
+ 127   1          else if(lcd_page_no == lcd_page_show_power_main_C)
+ 128   1          {
+ 129   2            str_copy(lcd_buffer[0],"power-main C:");
+ 130   2            str_itoa(lcd_buffer[1],cur_power_data.power_main_c_voltage);
+ 131   2          
+ 132   2          } 
+ 133   1          else if(lcd_page_no == lcd_page_show_power_standby_A)
+ 134   1          {
+ 135   2            str_copy(lcd_buffer[0],"power-standby A:");
+ 136   2            str_itoa(lcd_buffer[1],cur_power_data.power_standby_a_voltage);
+ 137   2          }
+ 138   1          else if(lcd_page_no == lcd_page_show_power_standby_B)
+ 139   1          {
+ 140   2            str_copy(lcd_buffer[0],"power-standby B:");
+ 141   2            str_itoa(lcd_buffer[1],cur_power_data.power_standby_b_voltage);
+ 142   2          }
+ 143   1          else if(lcd_page_no == lcd_page_show_power_standby_C)
+ 144   1          {
+ 145   2            str_copy(lcd_buffer[0],"power-standby C:");
+ 146   2            str_itoa(lcd_buffer[1],cur_power_data.power_standby_c_voltage);
+ 147   2          }
+ 148   1         
+ 149   1          LCD_Puts(0,0,lcd_buffer[0]);
+ 150   1          LCD_Puts(0,1,lcd_buffer[1]);
+ 151   1       
+ 152   1      }
+*** WARNING C280 IN LINE 108 OF ..\APP_PowerChangeBackup\main_002.c: 'arg': unreferenced local variable
+ 153          soft_timer timer_lcd_update = {0,20,lcd_update};
+ 154           
+ 155          /*
+ 156          按钮响应
+ 157          
+ 158          
+ 159          */
+ 160          void button_deal(void *arg)
+ 161          {
+ 162   1        
+ 163   1          if(button_get_status(BUTTON_ENTER,20) == BUTTON_LONG_PRESS)
+ 164   1          {
+ 165   2         
+ 166   2            lcd_page_no++;
+ 167   2            if(lcd_page_no >= lcd_page_end)
+ 168   2            {
+ 169   3              lcd_page_no = lcd_page_start + 1;
+ 170   3            }
+ 171   2       
+ 172   2          }
+ 173   1          
+ 174   1      }
+*** WARNING C280 IN LINE 160 OF ..\APP_PowerChangeBackup\main_002.c: 'arg': unreferenced local variable
+ 175          soft_timer timer_button_deal = {0,1,button_deal};
+C51 COMPILER V9.54   MAIN_002                                                              05/06/2021 19:17:10 PAGE 4   
+
+ 176          
+ 177          /*
+ 178          电源管理策略
+ 179          
+ 180          
+ 181          */
+ 182          void power_manage(void *arg)
+ 183          {
+ 184   1         
+ 185   1        power_data_get(&cur_power_data);
+ 186   1        if( cur_power_data.power_main_b_voltage > cur_power_data.power_voltage_high_limit)
+ 187   1        {
+ 188   2          cur_power_data.power_main_status = power_over;
+ 189   2       
+ 190   2      
+ 191   2        }
+ 192   1        else if(cur_power_data.power_main_b_voltage < cur_power_data.power_voltage_low_limit )
+ 193   1        {
+ 194   2          cur_power_data.power_main_status = power_low;
+ 195   2       
+ 196   2      
+ 197   2        }
+ 198   1        else
+ 199   1        { 
+ 200   2          cur_power_data.power_main_status = power_normal;
+ 201   2          
+ 202   2        }
+ 203   1        power_led(POWER_MAIN,cur_power_data.power_main_status);
+ 204   1      
+ 205   1        if( cur_power_data.power_standby_b_voltage > cur_power_data.power_voltage_high_limit)
+ 206   1        {
+ 207   2          cur_power_data.power_standby_status = power_over;
+ 208   2        }
+ 209   1        else if(cur_power_data.power_standby_b_voltage < cur_power_data.power_voltage_low_limit )
+ 210   1        {
+ 211   2          cur_power_data.power_standby_status = power_low;
+ 212   2        }
+ 213   1        else
+ 214   1        {
+ 215   2          cur_power_data.power_standby_status = power_normal;
+ 216   2          
+ 217   2        }
+ 218   1        power_led(POWER_STANDBY,cur_power_data.power_standby_status);
+ 219   1      
+ 220   1        if( cur_power_data.power_main_status != power_normal 
+ 221   1          && cur_power_data.power_standby_status != power_normal)
+ 222   1        {
+ 223   2          power_close(POWER_MAIN);
+ 224   2          power_close(POWER_STANDBY);   
+ 225   2          alarm = 0;
+ 226   2        }
+ 227   1        else if(cur_power_data.power_main_status == power_normal)
+ 228   1        {
+ 229   2          power_open(POWER_MAIN);
+ 230   2          power_close(POWER_STANDBY);
+ 231   2          alarm = 1;
+ 232   2        }
+ 233   1        else if(cur_power_data.power_standby_status == power_normal)
+ 234   1        {
+ 235   2          power_close(POWER_MAIN);
+ 236   2          power_open(POWER_STANDBY);
+ 237   2          alarm = 1;
+C51 COMPILER V9.54   MAIN_002                                                              05/06/2021 19:17:10 PAGE 5   
+
+ 238   2        }
+ 239   1       
+ 240   1      }
+*** WARNING C280 IN LINE 182 OF ..\APP_PowerChangeBackup\main_002.c: 'arg': unreferenced local variable
+ 241          soft_timer timer_power_manage = {0,100,power_manage};
+ 242          
+ 243          void Timer0_Handle()
+ 244          {
+ 245   1      
+ 246   1        soft_timer_stepper(&timer_lcd_update);
+ 247   1        soft_timer_stepper(&timer_button_deal);
+ 248   1        soft_timer_stepper(&timer_power_manage);
+ 249   1      }
+ 250           
+ 251          void main()
+ 252          {
+ 253   1        locker_datset(LOCKER_0,0XFF);
+ 254   1        locker_datset(LOCKER_1,0XFF);
+ 255   1        LCD_Init();
+ 256   1        Uart_init();
+ 257   1        Timer0_set_callback(Timer0_Handle);
+ 258   1        Timer0_Init();
+ 259   1      
+ 260   1        while(1)
+ 261   1        {
+ 262   2           soft_timer_check(&timer_button_deal,0);
+ 263   2           soft_timer_check(&timer_lcd_update,0);
+ 264   2           soft_timer_check(&timer_power_manage,0);
+ 265   2        }
+ 266   1      
+ 267   1      }
+ 268          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    927    ----
+   CONSTANT SIZE    =    110    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     32      15
+   IDATA SIZE       =     36    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  3 WARNING(S),  0 ERROR(S)

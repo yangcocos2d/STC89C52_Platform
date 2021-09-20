@@ -1,0 +1,62 @@
+C51 COMPILER V9.54   KEYBOARD                                                              07/12/2021 20:12:07 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE KEYBOARD
+OBJECT MODULE PLACED IN .\outHex\KeyBoard.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\KeyBoard\KeyBoard.c LARGE ROM(COMPACT) OPTIMIZE(9,SPEED) BROWSE IN
+                    -CDIR(..\..\74HC573;..\..\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\myst
+                    -ring;..\..\pcf8591;..\..\PWM;..\..\software_timer;..\..\TIMER;..\..\UART;..\..\AT24CXX;..\..\PCF8574;..\..\KeyBoard) DEB
+                    -UG OBJECTEXTEND PRINT(.\Listings\KeyBoard.lst) TABS(2) OBJECT(.\outHex\KeyBoard.obj)
+
+line level    source
+
+   1          #include "KeyBoard.h"
+   2          #include "PCF8574.h"
+   3          
+   4          /*
+   5          ���̵����궨��
+   6          o-------------------->x(��0��ʼ)
+   7          |
+   8          |
+   9          |
+  10          v
+  11          y
+  12          (��0��ʼ)
+  13          */
+  14          
+  15          unsigned char KeyBoard_get_status(int x,int y)
+  16          {
+  17   1        unsigned char is_key_press = 1;
+  18   1        PCF8574_write_port(0,0xFF);
+  19   1        PCF8574_write_port(1,0xFF);
+  20   1        PCF8574_set_bit(0,x,0);
+  21   1        PCF8574_set_bit(1,y,1);
+  22   1        is_key_press = PCF8574_read_bit(1,y);
+  23   1        return !is_key_press;
+  24   1      }
+  25          
+  26          unsigned char KeyBoard_is_loosen(KEY_BLOCK *key)
+  27          {
+  28   1        unsigned char key_is_loosen = 0;
+  29   1        key->cur_status =  KeyBoard_get_status(key->x,key->y);
+  30   1        if(key->last_status == 1 && key->cur_status == 0)
+  31   1        {
+  32   2          key_is_loosen = key->Key_Code;
+  33   2        }
+  34   1        key->last_status = key->cur_status;
+  35   1        return key_is_loosen;
+  36   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    182    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       8
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
