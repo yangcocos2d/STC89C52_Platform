@@ -1,12 +1,12 @@
-C51 COMPILER V9.54   MAIN_002                                                              07/12/2021 20:12:07 PAGE 1   
+C51 COMPILER V9.54   MAIN_002                                                              12/16/2021 12:22:32 PAGE 1   
 
 
 C51 COMPILER V9.54, COMPILATION OF MODULE MAIN_002
 OBJECT MODULE PLACED IN .\outHex\main_002.obj
-COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\main_002.c LARGE ROM(COMPACT) OPTIMIZE(9,SPEED) BROWSE INCDIR(..\..\7
-                    -4HC573;..\..\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\..\p
-                    -cf8591;..\..\PWM;..\..\software_timer;..\..\TIMER;..\..\UART;..\..\AT24CXX;..\..\PCF8574;..\..\KeyBoard) DEBUG OBJECTEXT
-                    -END PRINT(.\Listings\main_002.lst) TABS(2) OBJECT(.\outHex\main_002.obj)
+COMPILER INVOKED BY: C:\Keil_V525\C51\BIN\C51.EXE ..\main_002.c LARGE OPTIMIZE(9,SPEED) BROWSE INCDIR(..\..\74HC573;..\.
+                    -.\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\..\pcf8591;..\.
+                    -.\PWM;..\..\software_timer;..\..\TIMER;..\..\UART;..\..\AT24CXX;..\..\PCF8574;..\..\KeyBoard;..\Calu) DEBUG OBJECTEXTEND
+                    - PRINT(.\Listings\main_002.lst) TABS(2) OBJECT(.\outHex\main_002.obj)
 
 line level    source
 
@@ -19,267 +19,298 @@ line level    source
    7          #include "mystring.h"
    8          #include "UART.h"
    9          #include "KeyBoard.h"
-  10          
+  10          #include "calculate.h"
   11          
-  12          #define KEY_NUM   22
-  13          
+  12          
+  13          #define KEY_NUM   23
   14          
-  15          KEY_BLOCK key_num[KEY_NUM] = {
-  16          {0,0,'('},
-  17          {1,0,')'},
-  18          {2,0,'<'},
-  19          {3,0,'C'},
-  20          
-  21          {0,1,'7'},
-  22          {1,1,'8'},
-  23          {2,1,'9'},
-  24          {3,1,'+'},
-  25          
-  26          {0,2,'4'},
-  27          {1,2,'5'},
-  28          {2,2,'6'},
-  29          {3,2,'-'},
-  30          
-  31          {0,3,'1'},
-  32          {1,3,'2'},
-  33          {2,3,'3'},
-  34          {3,3,'*'},
-  35          
-  36          {0,4,'0'},
-  37          {1,4,'.'},
-  38          {2,4,'='},
-  39          {3,4,0xFD},
-  40          
-  41          {4,0,'L'},
-  42          {5,0,'R'},
-  43          };
+  15          
+  16          KEY_BLOCK key_num[KEY_NUM] = {
+  17          {0,0,'('},
+  18          {1,0,')'},
+  19          {2,0,'<'},
+  20          {3,0,'C'},
+  21          {4,0,'L'},
+  22          {5,0,'R'},
+  23          
+  24          {0,1,'7'},
+  25          {1,1,'8'},
+  26          {2,1,'9'},
+  27          {3,1,'+'},
+  28          
+  29          {0,2,'4'},
+  30          {1,2,'5'},
+  31          {2,2,'6'},
+  32          {3,2,'~'},
+  33          {4,2,'-'},
+  34          
+  35          {0,3,'1'},
+  36          {1,3,'2'},
+  37          {2,3,'3'},
+  38          {3,3,'*'},
+  39          
+  40          {0,4,'0'},
+  41          {1,4,'.'},
+  42          {2,4,'='},
+  43          {3,4,'/'},
   44          
-  45          typedef struct STR_INPUT
-  46          {
-  47            char str_input[100];
-  48            char str_result[100];
-  49            char str_input_tail;
-  50            char cursor_pos;      
-  51          
-  52            int dis_window_left;
-C51 COMPILER V9.54   MAIN_002                                                              07/12/2021 20:12:07 PAGE 2   
+  45          
+  46          };
+  47          typedef struct STR_INPUT
+  48          {
+  49            char str_input[100];
+  50            char str_result[100];
+  51            char str_input_tail;
+  52            char cursor_pos;      
+C51 COMPILER V9.54   MAIN_002                                                              12/16/2021 12:22:32 PAGE 2   
 
-  53            int dis_window_right;
-  54          }STR_INPUT;
-  55          
-  56          void STR_window_set(STR_INPUT* str)
-  57          {
-  58   1        
-  59   1        str->dis_window_right = str->cursor_pos;
+  53          
+  54            int dis_window_left;
+  55            int dis_window_right;
+  56          }STR_INPUT;
+  57          
+  58          void STR_window_set(STR_INPUT* str)
+  59          {
   60   1        
-  61   1        str->dis_window_left = str->dis_window_right - ( LCD1602_X_LIMIT - 1);
-  62   1        if(str->dis_window_left < 0)
-  63   1        {
-  64   2          str->dis_window_left = 0;
-  65   2          str->dis_window_right = LCD1602_X_LIMIT-1;
-  66   2        }
-  67   1       
-  68   1      }
-  69          
-  70          void STR_fold(STR_INPUT* str)
-  71          {
-  72   1        str->cursor_pos = str->str_input_tail;
-  73   1        STR_window_set(str);
-  74   1      }
-  75          
-  76          void STR_input_char(STR_INPUT* str,char ch)
-  77          {
-  78   1        str->str_input[str->str_input_tail++] = ch;
-  79   1      
-  80   1        STR_fold(str);
-  81   1      } 
-  82          
-  83          void STR_del_char(STR_INPUT* str)
-  84          {
-  85   1        if(str->str_input_tail > 0)
-  86   1        {
-  87   2          str->str_input[--str->str_input_tail] = ' ';
-  88   2          STR_fold(str);
-  89   2        }
-  90   1      }
-  91          
-  92          void STR_left_move(STR_INPUT* str)
-  93          {
-  94   1        if(str->cursor_pos > 0)
-  95   1        {
-  96   2          str->cursor_pos--;
-  97   2          STR_window_set(str);
-  98   2        }
-  99   1      }
- 100          
- 101          void STR_right_move(STR_INPUT* str)
- 102          {
- 103   1        if(str->cursor_pos < str->str_input_tail)
- 104   1        {
- 105   2          str->cursor_pos++;
- 106   2          STR_window_set(str);
- 107   2        }
- 108   1      }
- 109          
- 110          void STR_init(STR_INPUT* str)
- 111          {
- 112   1        int i = 0;
- 113   1        str->str_input_tail = 0;
- 114   1        str->dis_window_left = str->dis_window_right = 0;
-C51 COMPILER V9.54   MAIN_002                                                              07/12/2021 20:12:07 PAGE 3   
+  61   1        str->dis_window_right = str->cursor_pos;
+  62   1        
+  63   1        str->dis_window_left = str->dis_window_right - ( LCD1602_X_LIMIT - 1);
+  64   1        if(str->dis_window_left < 0)
+  65   1        {
+  66   2          str->dis_window_left = 0;
+  67   2          str->dis_window_right = LCD1602_X_LIMIT-1;
+  68   2        }
+  69   1       
+  70   1      }
+  71          
+  72          void STR_fold(STR_INPUT* str)
+  73          {
+  74   1        str->cursor_pos = str->str_input_tail;
+  75   1        STR_window_set(str);
+  76   1      }
+  77          
+  78          void STR_input_char(STR_INPUT* str,char ch)
+  79          {
+  80   1        str->str_input[str->str_input_tail++] = ch;
+  81   1      
+  82   1        STR_fold(str);
+  83   1      } 
+  84          
+  85          void STR_del_char(STR_INPUT* str)
+  86          {
+  87   1        if(str->str_input_tail > 0)
+  88   1        {
+  89   2          str->str_input[--str->str_input_tail] = ' ';
+  90   2          STR_fold(str);
+  91   2        }
+  92   1      }
+  93          
+  94          void STR_left_move(STR_INPUT* str)
+  95          {
+  96   1        if(str->cursor_pos > 0)
+  97   1        {
+  98   2          str->cursor_pos--;
+  99   2          STR_window_set(str);
+ 100   2        }
+ 101   1      }
+ 102          
+ 103          void STR_right_move(STR_INPUT* str)
+ 104          {
+ 105   1        if(str->cursor_pos < str->str_input_tail)
+ 106   1        {
+ 107   2          str->cursor_pos++;
+ 108   2          STR_window_set(str);
+ 109   2        }
+ 110   1      }
+ 111          
+ 112          void STR_init(STR_INPUT* str)
+ 113          {
+ 114   1        int i = 0;
+C51 COMPILER V9.54   MAIN_002                                                              12/16/2021 12:22:32 PAGE 3   
 
- 115   1        str->cursor_pos = 0;
- 116   1        for(i=0;i<100;i++)
- 117   1        {
- 118   2          str->str_input[i] = '\0';
- 119   2        }
- 120   1        for(i=0;i<(LCD1602_X_LIMIT-1);i++)
- 121   1        {
- 122   2          str->str_result[i] = ' ';
- 123   2        }
- 124   1        str->str_result[LCD1602_X_LIMIT-1] = '0';
- 125   1        str->str_result[LCD1602_X_LIMIT] = '\0';
- 126   1      }
- 127          
- 128          STR_INPUT str;
- 129          void keyboard_scan_timer_Handle()
- 130          {
- 131   1        int i;
- 132   1        unsigned char Key_Code = 0;
- 133   1        
- 134   1        for(i=0;i<KEY_NUM;i++)
- 135   1        {   
- 136   2            Key_Code = KeyBoard_is_loosen(&key_num[i]);
- 137   2            if(Key_Code >='0' && Key_Code <= '9' ||
- 138   2              Key_Code == '.' ||
- 139   2              Key_Code == '=' ||
- 140   2              Key_Code == '+' ||
- 141   2              Key_Code == '-' ||
- 142   2              Key_Code == '*' ||
- 143   2              Key_Code == 0xFD||
- 144   2              Key_Code == '(' ||
- 145   2              Key_Code == ')' )
- 146   2            {
- 147   3              STR_input_char(&str,Key_Code);
- 148   3            }
- 149   2            if(Key_Code == '<')
+ 115   1        str->str_input_tail = 0;
+ 116   1        str->dis_window_left = str->dis_window_right = 0;
+ 117   1        str->cursor_pos = 0;
+ 118   1        for(i=0;i<100;i++)
+ 119   1        {
+ 120   2          str->str_input[i] = '\0';
+ 121   2        }
+ 122   1        for(i=0;i<(LCD1602_X_LIMIT);i++)
+ 123   1        {
+ 124   2          str->str_result[i] = ' ';
+ 125   2        }
+ 126   1        str->str_result[0] = '0';
+ 127   1        str->str_result[LCD1602_X_LIMIT] = '\0';
+ 128   1        
+ 129   1      }
+ 130          
+ 131          STR_INPUT str;
+ 132          void keyboard_scan_timer_Handle()
+ 133          {
+ 134   1        int i;
+ 135   1        unsigned char Key_Code = 0;
+ 136   1        
+ 137   1        for(i=0;i<KEY_NUM;i++)
+ 138   1        {   
+ 139   2            Key_Code = KeyBoard_is_loosen(&key_num[i]);
+ 140   2            if(Key_Code >='0' && Key_Code <= '9' ||
+ 141   2              Key_Code == '.' ||
+ 142   2              Key_Code == '=' ||
+ 143   2              Key_Code == '+' ||
+ 144   2              Key_Code == '-' ||  //-
+ 145   2              Key_Code == '~' || //减去
+ 146   2              Key_Code == '*' ||
+ 147   2              Key_Code == '/' ||
+ 148   2              Key_Code == '(' ||
+ 149   2              Key_Code == ')' )
  150   2            {
- 151   3              STR_del_char(&str);
+ 151   3              STR_input_char(&str,Key_Code);
  152   3            }
- 153   2            if(Key_Code == 'C')
+ 153   2            if(Key_Code == '<')
  154   2            {
- 155   3              STR_init(&str); 
+ 155   3              STR_del_char(&str);
  156   3            }
- 157   2            if(Key_Code == 'L')
+ 157   2            if(Key_Code == 'C')
  158   2            {
- 159   3               STR_left_move(&str);
+ 159   3              STR_init(&str); 
  160   3            }
- 161   2            if(Key_Code == 'R')
+ 161   2            if(Key_Code == 'L')
  162   2            {
- 163   3               STR_right_move(&str);
+ 163   3               STR_left_move(&str);
  164   3            }
- 165   2            if(Key_Code == '=')
+ 165   2            if(Key_Code == 'R')
  166   2            {
- 167   3               
+ 167   3               STR_right_move(&str);
  168   3            }
- 169   2        }
- 170   1      }
- 171          
- 172          soft_timer keyboard_scan_timer = {0,10,keyboard_scan_timer_Handle};
- 173          
- 174          char LCD_Disbuffer[2][16];
- 175          
- 176          void lcd_update_timer_Handle()
-C51 COMPILER V9.54   MAIN_002                                                              07/12/2021 20:12:07 PAGE 4   
+ 169   2            if(Key_Code == '=')
+ 170   2            { 
+ 171   3                str.str_result[0] = '(';
+ 172   3                for(i = 0;i< str.str_input_tail;i++)
+ 173   3                {
+ 174   4                  str.str_result[i+1] = str.str_input[i];
+ 175   4                }
+ 176   3                str.str_result[i ] = ')';
+C51 COMPILER V9.54   MAIN_002                                                              12/16/2021 12:22:32 PAGE 4   
 
- 177          {
- 178   1        static int input_flash = 0;
- 179   1        int dis_cursor_pos = str.cursor_pos - str.dis_window_left; //相对于真实LCD的光标
- 180   1        char dis_flash = str.str_input[str.cursor_pos]; //闪烁字符
- 181   1        
- 182   1        str_copy(LCD_Disbuffer[0],"                ");
- 183   1        str_copy(LCD_Disbuffer[1],"                ");
- 184   1      
- 185   1        Timer0_interupt_disable();
- 186   1        if(str.str_input_tail == 0)
- 187   1        {
- 188   2          LCD_Clear(0);
- 189   2        }
- 190   1        else
- 191   1        {
- 192   2          str_copy(LCD_Disbuffer[0],&(str.str_input[str.dis_window_left]));
- 193   2          
- 194   2        }
- 195   1        if(input_flash == 1)
- 196   1        {
- 197   2          LCD_Disbuffer[0][dis_cursor_pos] = '_';
- 198   2        }
- 199   1        else
- 200   1        {
- 201   2          if(dis_flash == '\0') 
- 202   2          {
- 203   3            dis_flash = ' ';
- 204   3          }
- 205   2          LCD_Disbuffer[0][dis_cursor_pos] = dis_flash;
- 206   2      
- 207   2        }
- 208   1        if(str.dis_window_left > 0)
- 209   1        {
- 210   2          LCD_Disbuffer[0][0] = 0x7F;//左箭头
- 211   2        }
- 212   1        if(str.dis_window_right < str.str_input_tail)
- 213   1        {
- 214   2          LCD_Disbuffer[0][LCD1602_X_LIMIT-1] = 0x7E;//右箭头
- 215   2        }
- 216   1        
- 217   1        
- 218   1        LCD_Puts(0,0,LCD_Disbuffer[0]);
- 219   1        LCD_Puts(0,1,str.str_result);
- 220   1        input_flash = !input_flash;
- 221   1        Timer0_interupt_enable();
- 222   1      
- 223   1      }
- 224          soft_timer lcd_update_timer = {0,100,lcd_update_timer_Handle};
- 225          
- 226          char Timer0_Handle()
- 227          {
- 228   1      
- 229   1        soft_timer_stepper(&keyboard_scan_timer);
- 230   1        soft_timer_stepper(&lcd_update_timer);
- 231   1      }
-*** WARNING C173 IN LINE 231 OF ..\main_002.c: missing return-expression
- 232          
- 233          void main()
- 234          {
- 235   1       
- 236   1        Uart_init();
- 237   1        LCD_Init();
-C51 COMPILER V9.54   MAIN_002                                                              07/12/2021 20:12:07 PAGE 5   
+ 177   3                str.str_result[i +1] = '\0';
+ 178   3      
+ 179   3                cal_equation(str.str_result);
+ 180   3                
+ 181   3            }
+ 182   2        }
+ 183   1      }
+ 184          
+ 185          soft_timer keyboard_scan_timer = {0,10,keyboard_scan_timer_Handle};
+ 186          
+ 187          char LCD_Disbuffer[2][16];
+ 188          
+ 189          void lcd_update_timer_Handle()
+ 190          {
+ 191   1        static int input_flash = 0;
+ 192   1        int i = 0;
+ 193   1        int dis_cursor_pos = str.cursor_pos - str.dis_window_left; //相对于真实LCD的光标
+ 194   1        char dis_flash = str.str_input[str.cursor_pos]; //闪烁字符
+ 195   1        
+ 196   1        str_copy(LCD_Disbuffer[0],"                ");
+ 197   1        str_copy(LCD_Disbuffer[1],"                ");
+ 198   1      
+ 199   1      
+ 200   1        Timer0_interupt_disable();
+ 201   1        if(str.str_input_tail == 0)
+ 202   1        {
+ 203   2          LCD_Clear(0);
+ 204   2        }
+ 205   1        else
+ 206   1        {
+ 207   2          str_copy(LCD_Disbuffer[0],&(str.str_input[str.dis_window_left]));
+ 208   2          
+ 209   2        }
+ 210   1      
+ 211   1        if(input_flash == 1)
+ 212   1        {
+ 213   2          LCD_Disbuffer[0][dis_cursor_pos] = '_';
+ 214   2        }
+ 215   1        else
+ 216   1        {
+ 217   2          if(dis_flash == '\0') 
+ 218   2          {
+ 219   3            dis_flash = ' ';
+ 220   3          }
+ 221   2          LCD_Disbuffer[0][dis_cursor_pos] = dis_flash;
+ 222   2      
+ 223   2        }
+ 224   1        if(str.dis_window_left > 0)
+ 225   1        {
+ 226   2          LCD_Disbuffer[0][0] = 0x7F;//左箭头
+ 227   2        }
+ 228   1        if(str.dis_window_right < str.str_input_tail)
+ 229   1        {
+ 230   2          //LCD_Disbuffer[0][LCD1602_X_LIMIT-1] = 0x7E;//右箭头
+ 231   2        }
+ 232   1        //负号和减号
+ 233   1        for(i =0 ;i< 16;i++)
+ 234   1        {
+ 235   2          if(LCD_Disbuffer[0][i] == '~')
+ 236   2          {
+ 237   3            LCD_Disbuffer[0][i] = '-';
+ 238   3          }
+C51 COMPILER V9.54   MAIN_002                                                              12/16/2021 12:22:32 PAGE 5   
 
- 238   1        Timer0_set_callback(Timer0_Handle);
- 239   1        Timer0_Init();
- 240   1        STR_init(&str);
- 241   1        while(1)
+ 239   2        }
+ 240   1        //除号码
+ 241   1        for(i =0 ;i< 16;i++)
  242   1        {
- 243   2            if(soft_timer_check(&keyboard_scan_timer) == 1)
- 244   2            {
- 245   3              keyboard_scan_timer.fun();
- 246   3            }
- 247   2            if(soft_timer_check(&lcd_update_timer) == 1)
- 248   2            {
- 249   3              lcd_update_timer.fun();
- 250   3            }
- 251   2      
- 252   2        }
- 253   1      }
- 254          
-*** WARNING C290 IN LINE 231 OF ..\main_002.c: missing return value
+ 243   2          if(LCD_Disbuffer[0][i] == '/')
+ 244   2          {
+ 245   3            LCD_Disbuffer[0][i] = 0xFD;
+ 246   3          }
+ 247   2        }
+ 248   1        
+ 249   1        LCD_Puts(0,0,LCD_Disbuffer[0]);
+ 250   1        LCD_Puts(0,1,str.str_result);
+ 251   1        input_flash = !input_flash;
+ 252   1        Timer0_interupt_enable();
+ 253   1      
+ 254   1      }
+ 255          soft_timer lcd_update_timer = {0,100,lcd_update_timer_Handle};
+ 256          
+ 257          char Timer0_Handle()
+ 258          {
+ 259   1      
+ 260   1        soft_timer_stepper(&keyboard_scan_timer);
+ 261   1        soft_timer_stepper(&lcd_update_timer);
+ 262   1      }
+*** WARNING C173 IN LINE 262 OF ..\main_002.c: missing return-expression
+ 263          
+ 264          void main()
+ 265          {
+ 266   1        Uart_init();
+ 267   1        LCD_Init();
+ 268   1        Timer0_set_callback(Timer0_Handle);
+ 269   1        Timer0_Init();
+ 270   1        STR_init(&str);
+ 271   1        while(1)
+ 272   1        {
+ 273   2            if(soft_timer_check(&keyboard_scan_timer) == 1)
+ 274   2            {
+ 275   3              keyboard_scan_timer.fun();
+ 276   3            }
+ 277   2            if(soft_timer_check(&lcd_update_timer) == 1)
+ 278   2            {
+ 279   3              lcd_update_timer.fun();
+ 280   3             
+ 281   3            }
+ 282   2      
+ 283   2        }
+ 284   1      }
+ 285          
+*** WARNING C290 IN LINE 262 OF ..\main_002.c: missing return value
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    907    ----
+   CODE SIZE        =   1152    ----
    CONSTANT SIZE    =     17    ----
-   XDATA SIZE       =    408       8
+   XDATA SIZE       =    415      11
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
    IDATA SIZE       =   ----    ----

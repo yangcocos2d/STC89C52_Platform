@@ -2,14 +2,12 @@
 #include "PCF8574.h"
 
 /*
-���̵����궨��
-o-------------------->x(��0��ʼ)
+o-------------------->x
 |
 |
 |
 v
 y
-(��0��ʼ)
 */
 
 unsigned char KeyBoard_get_status(int x,int y)

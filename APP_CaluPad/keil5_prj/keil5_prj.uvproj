@@ -187,10 +187,10 @@
           <Target51Misc>
             <MemoryModel>2</MemoryModel>
             <RTOS>0</RTOS>
-            <RomSize>1</RomSize>
+            <RomSize>2</RomSize>
             <DataHold>0</DataHold>
             <XDataHold>0</XDataHold>
-            <UseOnchipRom>1</UseOnchipRom>
+            <UseOnchipRom>0</UseOnchipRom>
             <UseOnchipArithmetic>0</UseOnchipArithmetic>
             <UseMultipleDPTR>0</UseMultipleDPTR>
             <UseOnchipXram>0</UseOnchipXram>
@@ -311,7 +311,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\74HC573;..\..\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\..\pcf8591;..\..\PWM;..\..\software_timer;..\..\TIMER;..\..\UART;..\..\AT24CXX;..\..\PCF8574;..\..\KeyBoard</IncludePath>
+              <IncludePath>..\..\74HC573;..\..\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\..\pcf8591;..\..\PWM;..\..\software_timer;..\..\TIMER;..\..\UART;..\..\AT24CXX;..\..\PCF8574;..\..\KeyBoard;..\Calu</IncludePath>
             </VariousControls>
           </C51>
           <Ax51>
@@ -407,6 +407,11 @@
               <FileName>KeyBoard.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\KeyBoard\KeyBoard.c</FilePath>
+            </File>
+            <File>
+              <FileName>calculate.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Calu\calculate.c</FilePath>
             </File>
           </Files>
         </Group>

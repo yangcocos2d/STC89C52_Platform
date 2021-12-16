@@ -7,9 +7,10 @@
 #include "mystring.h"
 #include "UART.h"
 #include "KeyBoard.h"
+#include "calculate.h"
 
 
-#define KEY_NUM		22
+#define KEY_NUM		23
 
 
 KEY_BLOCK key_num[KEY_NUM] = {
@@ -17,6 +18,8 @@ KEY_BLOCK key_num[KEY_NUM] = {
 {1,0,')'},
 {2,0,'<'},
 {3,0,'C'},
+{4,0,'L'},
+{5,0,'R'},
 
 {0,1,'7'},
 {1,1,'8'},
@@ -26,7 +29,8 @@ KEY_BLOCK key_num[KEY_NUM] = {
 {0,2,'4'},
 {1,2,'5'},
 {2,2,'6'},
-{3,2,'-'},
+{3,2,'~'},
+{4,2,'-'},
 
 {0,3,'1'},
 {1,3,'2'},
@@ -36,12 +40,10 @@ KEY_BLOCK key_num[KEY_NUM] = {
 {0,4,'0'},
 {1,4,'.'},
 {2,4,'='},
-{3,4,0xFD},
+{3,4,'/'},
 
-{4,0,'L'},
-{5,0,'R'},
+
 };
-
 typedef struct STR_INPUT
 {
 	char str_input[100];
@@ -117,12 +119,13 @@ void STR_init(STR_INPUT* str)
 	{
 		str->str_input[i] = '\0';
 	}
-	for(i=0;i<(LCD1602_X_LIMIT-1);i++)
+	for(i=0;i<(LCD1602_X_LIMIT);i++)
 	{
 		str->str_result[i] = ' ';
 	}
-	str->str_result[LCD1602_X_LIMIT-1] = '0';
+	str->str_result[0] = '0';
 	str->str_result[LCD1602_X_LIMIT] = '\0';
+	
 }
 
 STR_INPUT str;
@@ -138,9 +141,10 @@ void keyboard_scan_timer_Handle()
 				Key_Code == '.' ||
 				Key_Code == '=' ||
 				Key_Code == '+' ||
-				Key_Code == '-' ||
+				Key_Code == '-' ||	//-
+				Key_Code == '~' || //减去
 				Key_Code == '*' ||
-				Key_Code == 0xFD||
+				Key_Code == '/' ||
 				Key_Code == '(' ||
 				Key_Code == ')' )
 			{
@@ -163,8 +167,17 @@ void keyboard_scan_timer_Handle()
 				 STR_right_move(&str);
 			}
 			if(Key_Code == '=')
-			{
-				 
+			{ 
+					str.str_result[0] = '(';
+					for(i = 0;i< str.str_input_tail;i++)
+					{
+						str.str_result[i+1] = str.str_input[i];
+					}
+					str.str_result[i ] = ')';
+					str.str_result[i +1] = '\0';
+
+					cal_equation(str.str_result);
+					
 			}
 	}
 }
@@ -176,11 +189,13 @@ char LCD_Disbuffer[2][16];
 void lcd_update_timer_Handle()
 {
 	static int input_flash = 0;
+	int i = 0;
 	int dis_cursor_pos = str.cursor_pos - str.dis_window_left; //相对于真实LCD的光标
 	char dis_flash = str.str_input[str.cursor_pos]; //闪烁字符
 	
 	str_copy(LCD_Disbuffer[0],"                ");
 	str_copy(LCD_Disbuffer[1],"                ");
+
 
 	Timer0_interupt_disable();
 	if(str.str_input_tail == 0)
@@ -192,6 +207,7 @@ void lcd_update_timer_Handle()
 		str_copy(LCD_Disbuffer[0],&(str.str_input[str.dis_window_left]));
 		
 	}
+
 	if(input_flash == 1)
 	{
 		LCD_Disbuffer[0][dis_cursor_pos] = '_';
@@ -211,9 +227,24 @@ void lcd_update_timer_Handle()
 	}
 	if(str.dis_window_right < str.str_input_tail)
 	{
-		LCD_Disbuffer[0][LCD1602_X_LIMIT-1] = 0x7E;//右箭头
+		//LCD_Disbuffer[0][LCD1602_X_LIMIT-1] = 0x7E;//右箭头
 	}
-	
+	//负号和减号
+	for(i =0 ;i< 16;i++)
+	{
+		if(LCD_Disbuffer[0][i] == '~')
+		{
+			LCD_Disbuffer[0][i] = '-';
+		}
+	}
+	//除号码
+	for(i =0 ;i< 16;i++)
+	{
+		if(LCD_Disbuffer[0][i] == '/')
+		{
+			LCD_Disbuffer[0][i] = 0xFD;
+		}
+	}
 	
 	LCD_Puts(0,0,LCD_Disbuffer[0]);
 	LCD_Puts(0,1,str.str_result);
@@ -232,7 +263,6 @@ char Timer0_Handle()
 
 void main()
 {
- 
 	Uart_init();
 	LCD_Init();
 	Timer0_set_callback(Timer0_Handle);
@@ -247,6 +277,7 @@ void main()
 			if(soft_timer_check(&lcd_update_timer) == 1)
 			{
 				lcd_update_timer.fun();
+			 
 			}
 
 	}

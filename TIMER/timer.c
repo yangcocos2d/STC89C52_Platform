@@ -41,7 +41,8 @@ void timer0_irq() interrupt 1
 	
 	if(p_timer0_callback != 0)
 	{
-			SP = p_timer0_callback(SP); //使用多线程操作系统
+			//SP = p_timer0_callback(SP); //使用多线程操作系统
+		p_timer0_callback(0);
 	}
 	EA = 1;
 }

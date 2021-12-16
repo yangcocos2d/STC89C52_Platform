@@ -1,0 +1,398 @@
+C51 COMPILER V9.54   CALCULATE                                                             12/16/2021 12:22:33 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE CALCULATE
+OBJECT MODULE PLACED IN .\outHex\calculate.obj
+COMPILER INVOKED BY: C:\Keil_V525\C51\BIN\C51.EXE ..\Calu\calculate.c LARGE OPTIMIZE(9,SPEED) BROWSE INCDIR(..\..\74HC57
+                    -3;..\..\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\..\pcf859
+                    -1;..\..\PWM;..\..\software_timer;..\..\TIMER;..\..\UART;..\..\AT24CXX;..\..\PCF8574;..\..\KeyBoard;..\Calu) DEBUG OBJECT
+                    -EXTEND PRINT(.\Listings\calculate.lst) TABS(2) OBJECT(.\outHex\calculate.obj)
+
+line level    source
+
+   1          /*
+   2          C语言科学计算器(控制台字符界面)
+   3          
+   4          */
+   5          
+   6          #include <stdio.h>
+   7          #include <string.h>
+   8          #include <stdlib.h>
+   9          
+  10          #include "calculate.h"
+  11          
+  12          #define NUM_MAX_LEN             15  //操作数最大长度 
+  13          #define EQUATION_MAX_LEN        100 //表达式最大长度 
+  14            
+  15          typedef struct st_bracket_index 
+  16          { 
+  17             int left_bracket_index;
+  18             int right_bracket_index;
+  19          }st_bracket_index; 
+  20          
+  21          st_bracket_index search_inlayer_left_bracket(char *equation)
+  22          {
+  23   1        int i = 0; 
+  24   1        st_bracket_index st_bracket_index_ret = {-1,-1}; 
+  25   1      
+  26   1        while(equation[i]!=0) 
+  27   1        { 
+  28   2          if(equation[i] == '(') 
+  29   2          {
+  30   3            st_bracket_index_ret.left_bracket_index = i; 
+  31   3          }
+  32   2          if(equation[i] == ')') 
+  33   2          {
+  34   3            st_bracket_index_ret.right_bracket_index = i; 
+  35   3            break; 
+  36   3          }
+  37   2          i++; 
+  38   2        }
+  39   1        return st_bracket_index_ret; 
+  40   1      }
+  41          
+  42          /*
+  43          把字符串src的cut_index_left+1到cut_index_right-1的部分复制给des 
+  44          */
+  45          void str_cut(char *des,char *src,int cut_index_left,int cut_index_right) 
+  46          { 
+  47   1          int i=0,j=0;
+  48   1          for(i = cut_index_left+1;i<cut_index_right;i++)
+  49   1          { 
+  50   2            des[j++] = src[i];
+  51   2          } 
+  52   1          des[j++] = '\0';
+C51 COMPILER V9.54   CALCULATE                                                             12/16/2021 12:22:33 PAGE 2   
+
+  53   1      }
+  54          
+  55          void str_remove_char(char *des,char ch_remove) 
+  56          {
+  57   1        int i;
+  58   1        int new_des_len = 0;
+  59   1        int des_len = strlen(des);
+  60   1        char new_des[EQUATION_MAX_LEN];
+  61   1        for(i=0;i<des_len;i++)
+  62   1        {
+  63   2          if(des[i]!=ch_remove)
+  64   2          {
+  65   3            new_des[new_des_len++] = des[i];
+  66   3          }
+  67   2        }
+  68   1        new_des[new_des_len++] = '\0';
+  69   1      
+  70   1        for(i=0;i<new_des_len;i++) 
+  71   1        {
+  72   2          des[i] = new_des[i];
+  73   2        }
+  74   1      } 
+  75          
+  76          /*
+  77          在index的前面新增一个字符 
+  78          */
+  79          void str_add_char(char *des,char ch_add,int index) 
+  80          {
+  81   1        int len_des = strlen(des);
+  82   1        int i=0;
+  83   1        for(i=len_des;i>=index;i--)
+  84   1        {
+  85   2          des[i+1]=des[i];
+  86   2        }
+  87   1        des[index] = ch_add;
+  88   1      }
+  89          
+  90          /* 
+  91          把字符串src粘贴到des的cut_index_left+1到cut_index_right-1部分 
+  92          is_del = 1;删除处于cut_index_left和cut_index_right的字符。 
+  93          */
+  94          #define CHAR_REMOVE     '#'
+  95          void str_paste(char *des,char *src,int paste_index_left,int paste_index_right,int is_del) 
+  96          { 
+  97   1          int i=0,j=0;
+  98   1          int len_src = strlen(src);
+  99   1          int len_des = strlen(des);
+ 100   1          int len_des_cut = paste_index_right - paste_index_left - 1;
+ 101   1          int des_move = len_src - len_des_cut; 
+ 102   1          char ch_remove = CHAR_REMOVE;
+ 103   1      
+ 104   1          if(is_del == 1) 
+ 105   1          {
+ 106   2            des[paste_index_left] = ch_remove; 
+ 107   2            des[paste_index_right] = ch_remove; 
+ 108   2          }
+ 109   1      
+ 110   1          if(des_move > 0)
+ 111   1          {
+ 112   2            for(i=len_des;i>=paste_index_right;i--) 
+ 113   2            {
+ 114   3              des[i + des_move] = des[i]; 
+C51 COMPILER V9.54   CALCULATE                                                             12/16/2021 12:22:33 PAGE 3   
+
+ 115   3            }
+ 116   2          }
+ 117   1          if(des_move < 0) 
+ 118   1          {
+ 119   2            for(i=paste_index_right;i<=len_des;i++) 
+ 120   2            {
+ 121   3              des[i + des_move] = des[i]; 
+ 122   3            }
+ 123   2          }
+ 124   1      
+ 125   1          for(i=0;i<len_src;i++) 
+ 126   1          {
+ 127   2            des[paste_index_left+ 1 + i] = src[i]; 
+ 128   2          }
+ 129   1      
+ 130   1          if(is_del == 1) 
+ 131   1          {
+ 132   2              str_remove_char( des, ch_remove );  
+ 133   2          }
+ 134   1        
+ 135   1      } 
+ 136          
+ 137          #define OPA_ADD   '+'
+ 138          #define OPA_SUB   '~'
+ 139          #define OPA_MUL   '*'
+ 140          #define OPA_DIV   '/'
+ 141          #define OPA_ENDRT '('
+ 142          #define OPA_END   ')'
+ 143          
+ 144          typedef struct  st_opa_index 
+ 145          {
+ 146            int opa_pre;
+ 147            int opa_cur;
+ 148            int opa_next;
+ 149          }st_opa_index;
+ 150          
+ 151          int char_is_opa(char ch)
+ 152          {
+ 153   1        if( ch == OPA_ADD
+ 154   1          ||ch == OPA_SUB
+ 155   1          ||ch == OPA_MUL
+ 156   1          ||ch == OPA_DIV
+ 157   1          ||ch == OPA_ENDRT
+ 158   1          ||ch == OPA_END)
+ 159   1          {
+ 160   2            return 1;
+ 161   2          }
+ 162   1          else
+ 163   1          {
+ 164   2            return 0;
+ 165   2          }
+ 166   1      }
+ 167          
+ 168          /*
+ 169              计算形如1/2,1+2这样的最简表达式。
+ 170              由于存在0.123456789...这样的小数计算困难的问题(小数有效位有限).
+ 171              后续改成基于字符串的计算.
+ 172          
+ 173          */
+ 174          void cal_single_equation(char *equation) 
+ 175          {
+ 176   1          int     len_equ = strlen(equation);
+C51 COMPILER V9.54   CALCULATE                                                             12/16/2021 12:22:33 PAGE 4   
+
+ 177   1          char    opa = 0;
+ 178   1          char    Num1[NUM_MAX_LEN]; 
+ 179   1          char    Num2[NUM_MAX_LEN]; 
+ 180   1          float   f_Num1=0;
+ 181   1          float   f_Num2=0;
+ 182   1          float   f_result=0;
+ 183   1          int     i = 0,j = 0;
+ 184   1          int     opa_index = 0;
+ 185   1      
+ 186   1          for(i=0;i<len_equ;i++)
+ 187   1          {
+ 188   2            if(char_is_opa(equation[i]) == 1)
+ 189   2            {
+ 190   3                opa = equation[i];
+ 191   3                opa_index = i;
+ 192   3                break;
+ 193   3            }
+ 194   2          }
+ 195   1      
+ 196   1          j=0;
+ 197   1          for(i=0;i<opa_index;i++)
+ 198   1          {
+ 199   2            Num1[j++] = equation[i];
+ 200   2          }
+ 201   1          Num1[j++] = '\0';
+ 202   1      
+ 203   1          j=0;
+ 204   1          for(i=opa_index + 1;i<len_equ;i++)
+ 205   1          {
+ 206   2            Num2[j++] = equation[i];
+ 207   2          }
+ 208   1          Num2[j++] = '\0';
+ 209   1      
+ 210   1          f_Num1 = atof(Num1);
+ 211   1          f_Num2 = atof(Num2);
+ 212   1          switch(opa)
+ 213   1          {
+ 214   2            case OPA_ADD:f_result = f_Num1 + f_Num2;break;
+ 215   2            case OPA_SUB:f_result = f_Num1 - f_Num2;break;
+ 216   2            case OPA_MUL:f_result = f_Num1 * f_Num2;break;
+ 217   2            case OPA_DIV:f_result = f_Num1 / f_Num2;break;
+ 218   2            default:break;
+ 219   2          }
+ 220   1          sprintf(equation,"%f",f_result);
+ 221   1      }
+ 222          
+ 223          int char_is_have(char *equation,char ch)
+ 224          {
+ 225   1        int len = strlen(equation); 
+ 226   1        int i;
+ 227   1        
+ 228   1        for(i=0;i<len;i++)
+ 229   1        { 
+ 230   2          if(equation[i] == ch)
+ 231   2          {
+ 232   3            return 1;
+ 233   3          }
+ 234   2        }
+ 235   1        return 0;
+ 236   1      }
+ 237          
+ 238          /* 
+C51 COMPILER V9.54   CALCULATE                                                             12/16/2021 12:22:33 PAGE 5   
+
+ 239          从字符串的index_start 到index_end搜索(包括index_start和index_end)，看有没有ch字符。 
+ 240          允许index_start < index_end，这样就表示反向搜索。 
+ 241          其中,ch还有一些特定含义。 
+ 242          比如ch = CHAR_FIND_OPA时，表示搜索属于操作符的字符，而不具体是某个字符。 
+ 243          */ 
+ 244          #define CHAR_FIND_OPA  0
+ 245          int char_find_instr(char *equation,int index_start,int index_end,char ch) 
+ 246          {
+ 247   1        int i=0;
+ 248   1        int ret = -1;
+ 249   1        if(index_start <= index_end)
+ 250   1        { 
+ 251   2          for(i=index_start;i<=index_end;i++)
+ 252   2          {
+ 253   3            if(ch == CHAR_FIND_OPA)
+ 254   3            {
+ 255   4                if(char_is_opa(equation[i]))
+ 256   4                { 
+ 257   5                  return i;
+ 258   5                }
+ 259   4            }
+ 260   3            else
+ 261   3            {
+ 262   4               if(equation[i] == ch)
+ 263   4              {
+ 264   5                ret = i;
+ 265   5              }
+ 266   4            }
+ 267   3          }
+ 268   2        } 
+ 269   1        else
+ 270   1        {
+ 271   2          for(i=index_start;i>=index_end;i--)
+ 272   2          {
+ 273   3            if(ch == CHAR_FIND_OPA)
+ 274   3            {
+ 275   4                if(char_is_opa(equation[i]))
+ 276   4                {
+ 277   5                  return i;
+ 278   5                }
+ 279   4            }
+ 280   3            else
+ 281   3            {
+ 282   4              if(equation[i] == ch) 
+ 283   4              {
+ 284   5                ret = i;
+ 285   5              }
+ 286   4            }
+ 287   3          }
+ 288   2        }
+ 289   1        return ret;
+ 290   1      }
+ 291          
+ 292          
+ 293          //1+2*3/4
+ 294          void cal_basic_equation(char *equation) 
+ 295          {
+ 296   1        int i =0;
+ 297   1        st_opa_index opa_capture;
+ 298   1        int len_equation = strlen(equation);
+ 299   1        char singel_eqution[EQUATION_MAX_LEN];
+ 300   1        float signel_result = 0;
+C51 COMPILER V9.54   CALCULATE                                                             12/16/2021 12:22:33 PAGE 6   
+
+ 301   1        char opa = OPA_MUL;
+ 302   1      
+ 303   1        while(1)
+ 304   1        {
+ 305   2          while(char_is_have(equation,opa))
+ 306   2          { 
+ 307   3              len_equation = strlen(equation);
+ 308   3              opa_capture.opa_cur = char_find_instr(equation,0,len_equation,opa);
+ 309   3              opa_capture.opa_pre = char_find_instr(equation,opa_capture.opa_cur-1,0,CHAR_FIND_OPA);
+ 310   3              opa_capture.opa_next = char_find_instr(equation,opa_capture.opa_cur+1,len_equation,CHAR_FIND_OPA);
+ 311   3      
+ 312   3              str_cut(singel_eqution,equation,opa_capture.opa_pre,opa_capture.opa_next);
+ 313   3              cal_single_equation(singel_eqution);
+ 314   3              str_paste(equation,singel_eqution,opa_capture.opa_pre,opa_capture.opa_next,0);
+ 315   3          } 
+ 316   2          if(opa == OPA_MUL) opa = OPA_DIV;
+ 317   2          else if(opa == OPA_DIV) opa = OPA_ADD;
+ 318   2          else if(opa == OPA_ADD) opa = OPA_SUB;
+ 319   2          else if(opa == OPA_SUB) break;
+ 320   2        }
+ 321   1        str_remove_char(equation,OPA_END);
+ 322   1        str_remove_char(equation,OPA_ENDRT);
+ 323   1      } 
+ 324          
+ 325          //(1+2*(2-3))
+ 326          void cal_equation(char *equation)
+ 327          { 
+ 328   1        char result[EQUATION_MAX_LEN];
+ 329   1        int len_result;
+ 330   1        st_bracket_index st_bracket_index_data;
+ 331   1      
+ 332   1        while(char_find_instr(equation,0,strlen(equation),CHAR_FIND_OPA)!=-1)
+ 333   1        {
+ 334   2          printf("cal_equation:%s\n",equation);
+ 335   2      
+ 336   2          st_bracket_index_data = search_inlayer_left_bracket(equation);
+ 337   2          str_cut(result,equation,st_bracket_index_data.left_bracket_index,st_bracket_index_data.right_bracket_i
+             -ndex);
+ 338   2      
+ 339   2          str_add_char(result,OPA_END,0);
+ 340   2          str_add_char(result,OPA_ENDRT,strlen(result));
+ 341   2          cal_basic_equation(result);
+ 342   2          str_remove_char(result,OPA_END);
+ 343   2          str_remove_char(result,OPA_ENDRT);
+ 344   2      
+ 345   2          str_paste(equation,result,st_bracket_index_data.left_bracket_index,st_bracket_index_data.right_bracket
+             -_index,1);
+ 346   2        }
+ 347   1      }
+*** WARNING C280 IN LINE 329 OF ..\Calu\calculate.c: 'len_result': unreferenced local variable
+ 348          
+ 349          //int main(void)
+ 350          //{
+ 351          //  char equation[EQUATION_MAX_LEN] = "(1.28+2*(~0.98-~3.09)+(4.09+23.04)/6)"; 
+ 352          //  cal_equation( equation); 
+ 353          //  printf("equation:%s\n",equation); 
+ 354          //  getchar();
+ 355          
+ 356          //  return 0;
+ 357          //}
+
+
+C51 COMPILER V9.54   CALCULATE                                                             12/16/2021 12:22:33 PAGE 7   
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2449    ----
+   CONSTANT SIZE    =     24    ----
+   XDATA SIZE       =   ----     463
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)

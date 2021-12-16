@@ -1,12 +1,12 @@
-C51 COMPILER V9.54   MYSTRING                                                              07/12/2021 20:12:07 PAGE 1   
+C51 COMPILER V9.54   MYSTRING                                                              12/16/2021 12:22:32 PAGE 1   
 
 
 C51 COMPILER V9.54, COMPILATION OF MODULE MYSTRING
 OBJECT MODULE PLACED IN .\outHex\mystring.obj
-COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ..\..\mystring\mystring.c LARGE ROM(COMPACT) OPTIMIZE(9,SPEED) BROWSE IN
-                    -CDIR(..\..\74HC573;..\..\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\myst
-                    -ring;..\..\pcf8591;..\..\PWM;..\..\software_timer;..\..\TIMER;..\..\UART;..\..\AT24CXX;..\..\PCF8574;..\..\KeyBoard) DEB
-                    -UG OBJECTEXTEND PRINT(.\Listings\mystring.lst) TABS(2) OBJECT(.\outHex\mystring.obj)
+COMPILER INVOKED BY: C:\Keil_V525\C51\BIN\C51.EXE ..\..\mystring\mystring.c LARGE OPTIMIZE(9,SPEED) BROWSE INCDIR(..\..\
+                    -74HC573;..\..\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\..\
+                    -pcf8591;..\..\PWM;..\..\software_timer;..\..\TIMER;..\..\UART;..\..\AT24CXX;..\..\PCF8574;..\..\KeyBoard;..\Calu) DEBUG 
+                    -OBJECTEXTEND PRINT(.\Listings\mystring.lst) TABS(2) OBJECT(.\outHex\mystring.obj)
 
 line level    source
 
@@ -62,10 +62,10 @@ line level    source
   50   1      }
 
 
-C51 COMPILER V9.54   MYSTRING                                                              07/12/2021 20:12:07 PAGE 2   
+C51 COMPILER V9.54   MYSTRING                                                              12/16/2021 12:22:32 PAGE 2   
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    354    ----
+   CODE SIZE        =    357    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =   ----      19
    PDATA SIZE       =   ----    ----
