@@ -1,9 +1,9 @@
-C51 COMPILER V9.54   SOFTWARE_TIMER                                                        12/16/2021 12:22:32 PAGE 1   
+C51 COMPILER V9.54   SOFTWARE_TIMER                                                        12/17/2021 09:51:12 PAGE 1   
 
 
 C51 COMPILER V9.54, COMPILATION OF MODULE SOFTWARE_TIMER
 OBJECT MODULE PLACED IN .\outHex\software_timer.obj
-COMPILER INVOKED BY: C:\Keil_V525\C51\BIN\C51.EXE ..\..\software_timer\software_timer.c LARGE OPTIMIZE(9,SPEED) BROWSE I
+COMPILER INVOKED BY: C:\Keil_v525\C51\BIN\C51.EXE ..\..\software_timer\software_timer.c LARGE OPTIMIZE(9,SPEED) BROWSE I
                     -NCDIR(..\..\74HC573;..\..\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mys
                     -tring;..\..\pcf8591;..\..\PWM;..\..\software_timer;..\..\TIMER;..\..\UART;..\..\AT24CXX;..\..\PCF8574;..\..\KeyBoard;..\
                     -Calu) DEBUG OBJECTEXTEND PRINT(.\Listings\software_timer.lst) TABS(2) OBJECT(.\outHex\software_timer.obj)

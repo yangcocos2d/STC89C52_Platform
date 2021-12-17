@@ -6,7 +6,6 @@ C语言科学计算器(控制台字符界面)
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
 #include "calculate.h"
 
 #define NUM_MAX_LEN             15  //操作数最大长度 
@@ -220,14 +219,14 @@ void cal_single_equation(char *equation)
     sprintf(equation,"%f",f_result);
 }
 
-int char_is_have(char *equation,char ch)
+int char_is_have(char *equation,char ch1,char ch2)
 {
   int len = strlen(equation); 
   int i;
   
   for(i=0;i<len;i++)
   { 
-    if(equation[i] == ch)
+    if(equation[i] == ch1 || equation[i] == ch2)
     {
       return 1;
     }
@@ -242,7 +241,7 @@ int char_is_have(char *equation,char ch)
 比如ch = CHAR_FIND_OPA时，表示搜索属于操作符的字符，而不具体是某个字符。 
 */ 
 #define CHAR_FIND_OPA  0
-int char_find_instr(char *equation,int index_start,int index_end,char ch) 
+int char_find_instr(char *equation,int index_start,int index_end,char ch1,char ch2) 
 {
   int i=0;
   int ret = -1;
@@ -250,7 +249,7 @@ int char_find_instr(char *equation,int index_start,int index_end,char ch)
   { 
     for(i=index_start;i<=index_end;i++)
     {
-      if(ch == CHAR_FIND_OPA)
+      if(ch1 == CHAR_FIND_OPA && ch2 == CHAR_FIND_OPA)
       {
           if(char_is_opa(equation[i]))
           { 
@@ -259,9 +258,10 @@ int char_find_instr(char *equation,int index_start,int index_end,char ch)
       }
       else
       {
-         if(equation[i] == ch)
+         if(equation[i] == ch1 || equation[i] == ch2)
         {
-          ret = i;
+         // ret = i;
+			 return i;
         }
       }
     }
@@ -270,7 +270,7 @@ int char_find_instr(char *equation,int index_start,int index_end,char ch)
   {
     for(i=index_start;i>=index_end;i--)
     {
-      if(ch == CHAR_FIND_OPA)
+      if(ch1 == CHAR_FIND_OPA && ch2 == CHAR_FIND_OPA)
       {
           if(char_is_opa(equation[i]))
           {
@@ -279,16 +279,16 @@ int char_find_instr(char *equation,int index_start,int index_end,char ch)
       }
       else
       {
-        if(equation[i] == ch) 
+        if(equation[i] == ch1 || equation[i] == ch2) 
         {
-          ret = i;
+         // ret = i;
+			return i;
         }
       }
     }
   }
   return ret;
 }
-
 
 //1+2*3/4
 void cal_basic_equation(char *equation) 
@@ -298,25 +298,37 @@ void cal_basic_equation(char *equation)
   int len_equation = strlen(equation);
   char singel_eqution[EQUATION_MAX_LEN];
   float signel_result = 0;
-  char opa = OPA_MUL;
+  char opa1 = OPA_MUL,opa2 = OPA_DIV;
+
+  	
 
   while(1)
   {
-    while(char_is_have(equation,opa))
+	  
+    while(char_is_have(equation,opa1,opa2) == 1)
     { 
         len_equation = strlen(equation);
-        opa_capture.opa_cur = char_find_instr(equation,0,len_equation,opa);
-        opa_capture.opa_pre = char_find_instr(equation,opa_capture.opa_cur-1,0,CHAR_FIND_OPA);
-        opa_capture.opa_next = char_find_instr(equation,opa_capture.opa_cur+1,len_equation,CHAR_FIND_OPA);
+        opa_capture.opa_cur = char_find_instr(equation,0,len_equation,opa1,opa2);
+
+        opa_capture.opa_pre = char_find_instr(equation,opa_capture.opa_cur-1,0,CHAR_FIND_OPA,CHAR_FIND_OPA);
+        opa_capture.opa_next = char_find_instr(equation,opa_capture.opa_cur+1,len_equation,CHAR_FIND_OPA,CHAR_FIND_OPA);
 
         str_cut(singel_eqution,equation,opa_capture.opa_pre,opa_capture.opa_next);
+		
         cal_single_equation(singel_eqution);
         str_paste(equation,singel_eqution,opa_capture.opa_pre,opa_capture.opa_next,0);
     } 
-    if(opa == OPA_MUL) opa = OPA_DIV;
-    else if(opa == OPA_DIV) opa = OPA_ADD;
-    else if(opa == OPA_ADD) opa = OPA_SUB;
-    else if(opa == OPA_SUB) break;
+	if(opa1 == OPA_ADD && opa2 == OPA_SUB)
+	{
+		break;
+	}
+    if(opa1 == OPA_MUL && opa2 == OPA_DIV)
+	{
+		opa1 = OPA_ADD;
+		opa2 = OPA_SUB;
+	}
+	
+ 
   }
   str_remove_char(equation,OPA_END);
   str_remove_char(equation,OPA_ENDRT);
@@ -329,7 +341,7 @@ void cal_equation(char *equation)
   int len_result;
   st_bracket_index st_bracket_index_data;
 
-  while(char_find_instr(equation,0,strlen(equation),CHAR_FIND_OPA)!=-1)
+  while(char_find_instr(equation,0,strlen(equation),CHAR_FIND_OPA,CHAR_FIND_OPA)!=-1)
   {
     printf("cal_equation:%s\n",equation);
 
@@ -348,7 +360,7 @@ void cal_equation(char *equation)
 
 //int main(void)
 //{
-//  char equation[EQUATION_MAX_LEN] = "(1.28+2*(~0.98-~3.09)+(4.09+23.04)/6)"; 
+//  char equation[EQUATION_MAX_LEN] = "(1+2/(2*(1/3)))"; 
 //  cal_equation( equation); 
 //  printf("equation:%s\n",equation); 
 //  getchar();

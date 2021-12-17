@@ -1,9 +1,9 @@
-C51 COMPILER V9.54   PCF8574                                                               12/16/2021 12:22:32 PAGE 1   
+C51 COMPILER V9.54   PCF8574                                                               12/17/2021 09:51:13 PAGE 1   
 
 
 C51 COMPILER V9.54, COMPILATION OF MODULE PCF8574
 OBJECT MODULE PLACED IN .\outHex\PCF8574.obj
-COMPILER INVOKED BY: C:\Keil_V525\C51\BIN\C51.EXE ..\..\PCF8574\PCF8574.c LARGE OPTIMIZE(9,SPEED) BROWSE INCDIR(..\..\74
+COMPILER INVOKED BY: C:\Keil_v525\C51\BIN\C51.EXE ..\..\PCF8574\PCF8574.c LARGE OPTIMIZE(9,SPEED) BROWSE INCDIR(..\..\74
                     -HC573;..\..\BUTTON;..\..\DS18B20;..\..\exti_interrupt;..\..\IIC;..\..\LCD1602;..\..\motor_encode;..\..\mystring;..\..\pc
                     -f8591;..\..\PWM;..\..\software_timer;..\..\TIMER;..\..\UART;..\..\AT24CXX;..\..\PCF8574;..\..\KeyBoard;..\Calu) DEBUG OB
                     -JECTEXTEND PRINT(.\Listings\PCF8574.lst) TABS(2) OBJECT(.\outHex\PCF8574.obj)
@@ -62,7 +62,7 @@ line level    source
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-C51 COMPILER V9.54   PCF8574                                                               12/16/2021 12:22:32 PAGE 2   
+C51 COMPILER V9.54   PCF8574                                                               12/17/2021 09:51:13 PAGE 2   
 
    CODE SIZE        =    151    ----
    CONSTANT SIZE    =   ----    ----

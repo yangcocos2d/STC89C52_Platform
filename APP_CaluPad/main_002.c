@@ -10,7 +10,7 @@
 #include "calculate.h"
 
 
-#define KEY_NUM		23
+#define KEY_NUM		28
 
 
 KEY_BLOCK key_num[KEY_NUM] = {
@@ -25,23 +25,29 @@ KEY_BLOCK key_num[KEY_NUM] = {
 {1,1,'8'},
 {2,1,'9'},
 {3,1,'+'},
+{4,1,'q'},
+{5,1,'s'}, //sin
 
 {0,2,'4'},
 {1,2,'5'},
 {2,2,'6'},
 {3,2,'~'},
 {4,2,'-'},
+{5,2,'c'}, //cos
 
 {0,3,'1'},
 {1,3,'2'},
 {2,3,'3'},
 {3,3,'*'},
 
+{5,3,'t'}, //tan
+
 {0,4,'0'},
 {1,4,'.'},
 {2,4,'='},
 {3,4,'/'},
 
+{5,4,'e'}, //ex
 
 };
 typedef struct STR_INPUT
@@ -78,7 +84,14 @@ void STR_fold(STR_INPUT* str)
 void STR_input_char(STR_INPUT* str,char ch)
 {
 	str->str_input[str->str_input_tail++] = ch;
-
+	
+//	if(str->str_input_tail == str->cursor_pos)
+//	{
+//		str->str_input_tail++;
+//	}
+//	
+//	str->str_input[str->cursor_pos] = ch;
+	
 	STR_fold(str);
 }	
 
@@ -149,6 +162,39 @@ void keyboard_scan_timer_Handle()
 				Key_Code == ')' )
 			{
 				STR_input_char(&str,Key_Code);
+				
+			}
+			
+			//Èý½Çº¯Êý
+			if(Key_Code == 's')
+			{
+				STR_input_char(&str,'s');
+				STR_input_char(&str,'i');
+				STR_input_char(&str,'n');
+			}
+			if(Key_Code == 'c')
+			{
+				STR_input_char(&str,'c');
+				STR_input_char(&str,'o');
+				STR_input_char(&str,'s');
+			}
+			if(Key_Code == 't')
+			{
+				STR_input_char(&str,'t');
+				STR_input_char(&str,'a');
+				STR_input_char(&str,'n');
+			}
+			
+			if(Key_Code == 'q')
+			{
+				STR_input_char(&str,'s');
+				STR_input_char(&str,'q');
+				STR_input_char(&str,'r');
+				STR_input_char(&str,'t');
+			}
+			if(Key_Code == 'e')
+			{
+				STR_input_char(&str,'^');
 			}
 			if(Key_Code == '<')
 			{
@@ -176,13 +222,14 @@ void keyboard_scan_timer_Handle()
 					str.str_result[i ] = ')';
 					str.str_result[i +1] = '\0';
 
+					//1+2+3+(3*7.9) ==> ?
 					cal_equation(str.str_result);
 					
 			}
 	}
 }
 
-soft_timer keyboard_scan_timer = {0,10,keyboard_scan_timer_Handle};
+soft_timer keyboard_scan_timer = {0,5,keyboard_scan_timer_Handle};
 
 char LCD_Disbuffer[2][16];
 
